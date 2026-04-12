@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tofiquem/assingment/internal/database"
-	"github.com/tofiquem/assingment/internal/models"
+	"github.com/tofiquem/assingment/pkg/database"
+	"github.com/tofiquem/assingment/pkg/models"
 )
 
 type SeedData struct {

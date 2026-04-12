@@ -8,8 +8,8 @@ import (
 
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"github.com/tofiquem/assingment/internal/models"
-	"github.com/tofiquem/assingment/internal/services"
+	"github.com/tofiquem/assingment/pkg/models"
+	"github.com/tofiquem/assingment/pkg/services"
 	"gorm.io/gorm"
 )
 

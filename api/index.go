@@ -6,8 +6,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
-	"github.com/tofiquem/assingment/internal/database"
-	"github.com/tofiquem/assingment/internal/handlers"
+	"github.com/tofiquem/assingment/pkg/database"
+	"github.com/tofiquem/assingment/pkg/handlers"
 )
 
 func init() {
