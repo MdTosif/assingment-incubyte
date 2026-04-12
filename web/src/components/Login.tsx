@@ -6,13 +6,18 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { authAPI } from '../services/api';
+import { User } from '../types';
 
 interface LoginFormData {
   email: string;
   password: string;
 }
 
-const Login: React.FC = () => {
+interface LoginProps {
+  onLogin: (token: string, user: User) => void;
+}
+
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -38,9 +43,8 @@ const Login: React.FC = () => {
     try {
       const response = await authAPI.login(formData);
       
-      // Store token and user info
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      // Call parent handler to update auth state
+      onLogin(response.token, response.user);
       
       // Redirect to dashboard
       navigate('/');

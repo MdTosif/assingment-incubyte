@@ -3,14 +3,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { User } from './types';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import EmployeeForm from './components/EmployeeForm';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Check if user is logged in on app load
+  const checkAuth = () => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
@@ -18,20 +18,44 @@ function App() {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        return parsedUser;
       } catch (error) {
         console.error('Failed to parse user data:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        setUser(null);
+        return null;
       }
+    } else {
+      setUser(null);
+      return null;
     }
-    
+  };
+
+  useEffect(() => {
+    checkAuth();
     setLoading(false);
+  }, []);
+
+  // Listen for storage changes (login from other tabs)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      checkAuth();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+  };
+
+  const handleLogin = (token: string, userData: User) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
   };
 
   if (loading) {
@@ -52,13 +76,14 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/analytics" element={<Dashboard />} />
-            <Route path="/add-employee" element={<Dashboard />} />
-            <Route path="/edit-employee/:id" element={<Dashboard />} />
+            <Route path="/add-employee" element={<EmployeeForm />} />
+            <Route path="/edit-employee/:id" element={<EmployeeForm />} />
+            <Route path="/login" element={<Navigate to="/" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         ) : (
           <Routes>
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         )}

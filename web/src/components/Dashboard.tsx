@@ -241,7 +241,7 @@ const Dashboard: React.FC = () => {
                     className="pl-8 w-[250px]"
                   />
                 </div>
-                <Button size="sm">
+                <Button size="sm" onClick={() => navigate('/add-employee')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Employee
                 </Button>
