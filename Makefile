@@ -14,12 +14,18 @@ BINARY_UNIX=$(BINARY_NAME)_unix
 COVERAGE_FILE=coverage.out
 COVERAGE_HTML=coverage.html
 
-.PHONY: all build clean test coverage coverage-html deps lint help
+.PHONY: all build build-web build-all clean test coverage coverage-html deps lint help
 
 all: test build
 
 build: 
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/server
+
+build-web:
+	cd web && npm run build
+
+build-all: build build-web
+	@echo "Built both backend and frontend"
 
 test:
 	$(GOTEST) -v ./...
@@ -103,7 +109,9 @@ benchmark:
 help:
 	@echo "Available targets:"
 	@echo "  all              - Run tests and build"
-	@echo "  build            - Build the application"
+	@echo "  build            - Build the backend application"
+	@echo "  build-web        - Build the frontend application"
+	@echo "  build-all        - Build both backend and frontend"
 	@echo "  test             - Run all tests"
 	@echo "  test-verbose     - Run tests with verbose output and race detection"
 	@echo "  test-coverage    - Run tests with coverage"
