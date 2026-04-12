@@ -1,0 +1,6 @@
+web/node_modules
+web/build
+.git
+**/*.md
+public/*
+!public/.gitkeep

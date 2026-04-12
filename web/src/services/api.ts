@@ -1,0 +1,87 @@
+import axios, { AxiosResponse } from 'axios';
+import {
+  Employee,
+  CreateEmployeeRequest,
+  UpdateEmployeeRequest,
+  EmployeesResponse,
+  CountrySalaryStats,
+  JobTitleSalaryStats,
+  DepartmentSalaryStats,
+  HealthResponse
+} from '../types';
+
+const API_BASE_URL = '/api';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Employee API calls
+export const employeeAPI = {
+  // Get all employees with pagination
+  getEmployees: async (page = 1, limit = 50): Promise<EmployeesResponse> => {
+    const response: AxiosResponse<EmployeesResponse> = await api.get('/employees', {
+      params: { page, limit }
+    });
+    return response.data;
+  },
+
+  // Get single employee by ID
+  getEmployee: async (id: number): Promise<Employee> => {
+    const response: AxiosResponse<Employee> = await api.get(`/employees/${id}`);
+    return response.data;
+  },
+
+  // Create new employee
+  createEmployee: async (employeeData: CreateEmployeeRequest): Promise<Employee> => {
+    const response: AxiosResponse<Employee> = await api.post('/employees', employeeData);
+    return response.data;
+  },
+
+  // Update employee
+  updateEmployee: async (id: number, employeeData: UpdateEmployeeRequest): Promise<Employee> => {
+    const response: AxiosResponse<Employee> = await api.put(`/employees/${id}`, employeeData);
+    return response.data;
+  },
+
+  // Delete employee
+  deleteEmployee: async (id: number): Promise<void> => {
+    await api.delete(`/employees/${id}`);
+  },
+};
+
+// Analytics API calls
+export const analyticsAPI = {
+  // Get salary statistics by country
+  getSalaryByCountry: async (): Promise<CountrySalaryStats[]> => {
+    const response: AxiosResponse<CountrySalaryStats[]> = await api.get('/analytics/salary/by-country');
+    return response.data;
+  },
+
+  // Get salary statistics by job title in a country
+  getSalaryByJobTitleInCountry: async (country: string): Promise<JobTitleSalaryStats[]> => {
+    const response: AxiosResponse<JobTitleSalaryStats[]> = await api.get(
+      `/analytics/salary/by-job-title/${encodeURIComponent(country)}`
+    );
+    return response.data;
+  },
+
+  // Get department salary insights
+  getDepartmentInsights: async (): Promise<DepartmentSalaryStats[]> => {
+    const response: AxiosResponse<DepartmentSalaryStats[]> = await api.get('/analytics/salary/department-insights');
+    return response.data;
+  },
+};
+
+// Health check
+export const healthAPI = {
+  getHealth: async (): Promise<HealthResponse> => {
+    const response: AxiosResponse<HealthResponse> = await api.get('/health');
+    return response.data;
+  },
+};
+
+export default api;

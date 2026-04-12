@@ -1,0 +1,12 @@
+/web/node_modules
+/web/build
+/public/*
+!/public/.gitkeep
+/bin
+*.exe
+.DS_Store
+
+/generated/prisma
+
+*.db
+coverage.out
