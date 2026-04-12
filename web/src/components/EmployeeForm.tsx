@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { ArrowLeft, UserPlus } from 'lucide-react';
 import { employeeAPI } from '../services/api';
 import { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '../types';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 const EmployeeForm: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -231,180 +236,154 @@ const EmployeeForm: React.FC = () => {
   if (loading && isEditing) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
-      <div className="sm:flex sm:items-center mb-6">
-        <div className="sm:flex-auto">
-          <Link
-            to="/"
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
-          >
-            <ArrowLeftIcon className="h-4 w-4 mr-1" />
-            Back to Employees
-          </Link>
-          <h1 className="text-2xl font-semibold text-gray-900">
+    <div className="container mx-auto py-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4 mb-4">
+            <Link to="/" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back to Employees
+            </Link>
+          </div>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="h-6 w-6" />
             {isEditing ? 'Edit Employee' : 'Add New Employee'}
-          </h1>
-          <p className="mt-2 text-sm text-gray-700">
+          </CardTitle>
+          <CardDescription>
             {isEditing 
               ? 'Update the employee information below.'
               : 'Fill in the information below to add a new employee to the system.'
             }
-          </p>
-        </div>
-      </div>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                {error}
+              </div>
+            )}
 
-      {error && (
-        <div className="rounded-md bg-red-50 p-4 mb-6">
-          <div className="text-sm text-red-700">{error}</div>
-        </div>
-      )}
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  required
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                />
+              </div>
 
-      <div className="bg-white shadow sm:rounded-lg">
-        <form onSubmit={handleSubmit} className="px-4 py-5 sm:p-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                First Name *
-              </label>
-              <input
-                type="text"
-                id="firstName"
-                name="firstName"
-                required
-                value={formData.firstName}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  required
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="jobTitle">Job Title *</Label>
+                <Select
+                  value={formData.jobTitle}
+                  onValueChange={(value) => handleInputChange({ target: { name: 'jobTitle', value } } as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a job title" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobTitles.map(title => (
+                      <SelectItem key={title} value={title}>{title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="country">Country *</Label>
+                <Select
+                  value={formData.country}
+                  onValueChange={(value) => handleInputChange({ target: { name: 'country', value } } as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map(country => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="salary">Salary (USD) *</Label>
+                <Input
+                  id="salary"
+                  name="salary"
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={formData.salary}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="department">Department *</Label>
+                <Select
+                  value={formData.department}
+                  onValueChange={(value) => handleInputChange({ target: { name: 'department', value } } as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map(dept => (
+                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                Last Name *
-              </label>
-              <input
-                type="text"
-                id="lastName"
-                name="lastName"
-                required
-                value={formData.lastName}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
+            <div className="flex justify-end gap-3">
+              <Link to="/">
+                <Button variant="outline">
+                  Cancel
+                </Button>
+              </Link>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Saving...' : (isEditing ? 'Update Employee' : 'Create Employee')}
+              </Button>
             </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email *
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700">
-                Job Title *
-              </label>
-              <select
-                id="jobTitle"
-                name="jobTitle"
-                required
-                value={formData.jobTitle}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              >
-                <option value="">Select a job title</option>
-                {jobTitles.map(title => (
-                  <option key={title} value={title}>{title}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
-                Country *
-              </label>
-              <select
-                id="country"
-                name="country"
-                required
-                value={formData.country}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              >
-                <option value="">Select a country</option>
-                {countries.map(country => (
-                  <option key={country} value={country}>{country}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="salary" className="block text-sm font-medium text-gray-700">
-                Salary (USD) *
-              </label>
-              <input
-                type="number"
-                id="salary"
-                name="salary"
-                required
-                min="0"
-                step="0.01"
-                value={formData.salary}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div className="sm:col-span-2">
-              <label htmlFor="department" className="block text-sm font-medium text-gray-700">
-                Department *
-              </label>
-              <select
-                id="department"
-                name="department"
-                required
-                value={formData.department}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              >
-                <option value="">Select a department</option>
-                {departments.map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-end">
-            <Link
-              to="/"
-              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-3"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : (isEditing ? 'Update Employee' : 'Create Employee')}
-            </button>
-          </div>
-        </form>
-      </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

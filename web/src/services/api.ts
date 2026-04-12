@@ -7,17 +7,50 @@ import {
   CountrySalaryStats,
   JobTitleSalaryStats,
   DepartmentSalaryStats,
-  HealthResponse
+  HealthResponse,
+  LoginRequest,
+  LoginResponse,
+  ChangePasswordRequest,
+  User
 } from '../types';
 
 const API_BASE_URL = '/api';
 
+// Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Add request interceptor to include JWT token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle auth errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid, clear local storage and redirect to login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Employee API calls
 export const employeeAPI = {
@@ -73,6 +106,31 @@ export const analyticsAPI = {
   getDepartmentInsights: async (): Promise<DepartmentSalaryStats[]> => {
     const response: AxiosResponse<DepartmentSalaryStats[]> = await api.get('/analytics/salary/department-insights');
     return response.data;
+  },
+};
+
+// Authentication API calls
+export const authAPI = {
+  // Login
+  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+    const response: AxiosResponse<LoginResponse> = await api.post('/auth/login', credentials);
+    return response.data;
+  },
+
+  // Get current user
+  getMe: async (): Promise<User> => {
+    const response: AxiosResponse<User> = await api.get('/auth/me');
+    return response.data;
+  },
+
+  // Logout
+  logout: async (): Promise<void> => {
+    await api.post('/auth/logout');
+  },
+
+  // Change password
+  changePassword: async (passwordData: ChangePasswordRequest): Promise<void> => {
+    await api.post('/auth/change-password', passwordData);
   },
 };
 

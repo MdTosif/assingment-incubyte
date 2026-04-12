@@ -22,7 +22,7 @@ func TestDB(t *testing.T) *gorm.DB {
 	}
 
 	// Auto-migrate the schema
-	if err := db.AutoMigrate(&models.Employee{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Employee{}); err != nil {
 		t.Fatalf("Failed to migrate test database: %v", err)
 	}
 

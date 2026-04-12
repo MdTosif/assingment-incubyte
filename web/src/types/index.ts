@@ -65,3 +65,32 @@ export interface DepartmentSalaryStats {
 export interface HealthResponse {
   status: string;
 }
+
+// Authentication types
+export interface User {
+  id: number;
+  email: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  lastLogin?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  expiresAt: string;
+  user: User;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}

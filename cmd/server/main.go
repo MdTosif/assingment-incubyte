@@ -35,13 +35,9 @@ func main() {
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	}).Methods("GET")
 
-	// Employee handlers
-	employeeHandler := handlers.NewEmployeeHandler()
-	employeeHandler.RegisterRoutes(r)
-
-	// Analytics handlers
-	analyticsHandler := handlers.NewAnalyticsHandler()
-	analyticsHandler.RegisterRoutes(r)
+	// Authentication handler (registers all routes including protected ones)
+	authHandler := handlers.NewAuthHandler(database.DB)
+	authHandler.RegisterRoutes(r)
 
 	// Serve static files
 	r.PathPrefix("/").Handler(spaHandler(publicDir))
