@@ -1,5 +1,4 @@
 {
-  "buildCommand": "go mod download && cd web && npm ci && npm run build && cp -r build/* ../public",
   "outputDirectory": "public",
   "framework": null,
   "routes": [
