@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tofiquem/assingment/internal/models"
+	"github.com/tofiquem/assingment/pkg/models"
 	"gorm.io/gorm"
 )
 

@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/tofiquem/assingment/internal/database"
-	"github.com/tofiquem/assingment/internal/models"
-	"github.com/tofiquem/assingment/internal/testutils"
+	"github.com/tofiquem/assingment/pkg/database"
+	"github.com/tofiquem/assingment/pkg/models"
+	"github.com/tofiquem/assingment/pkg/testutils"
 	"gorm.io/gorm"
 )
 

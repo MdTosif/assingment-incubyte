@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/tofiquem/assingment/internal/models"
+	"github.com/tofiquem/assingment/pkg/models"
 )
 
 type JWTService struct {
