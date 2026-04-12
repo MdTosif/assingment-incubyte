@@ -9,9 +9,10 @@ RUN npm run build
 # Stage 2: compile Go binary and place UI assets in public/
 FROM golang:1.25-alpine AS go-build
 WORKDIR /src
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 COPY cmd/ ./cmd/
+COPY pkg/ ./pkg/
 COPY --from=web-build /app/build ./public
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server
