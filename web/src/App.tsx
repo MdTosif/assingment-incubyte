@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { User } from './types';
-import Navigation from './components/Navigation';
 import Login from './components/Login';
-import EmployeeList from './components/EmployeeList';
-import EmployeeForm from './components/EmployeeForm';
-import Analytics from './components/Analytics';
+import Dashboard from './components/Dashboard';
 import './App.css';
 
 function App() {
@@ -52,18 +49,13 @@ function App() {
     <Router>
       <div className="min-h-screen bg-background">
         {user ? (
-          <>
-            <Navigation user={user} onLogout={handleLogout} />
-            <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-              <Routes>
-                <Route path="/" element={<EmployeeList />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/add-employee" element={<EmployeeForm />} />
-                <Route path="/edit-employee/:id" element={<EmployeeForm />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
-          </>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/analytics" element={<Dashboard />} />
+            <Route path="/add-employee" element={<Dashboard />} />
+            <Route path="/edit-employee/:id" element={<Dashboard />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         ) : (
           <Routes>
             <Route path="/login" element={<Login />} />
