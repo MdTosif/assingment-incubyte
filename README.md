@@ -232,7 +232,14 @@ assingment/
 - `JWT_EXPIRATION`: JWT token expiration time (default: `24h`)
 
 ### Frontend
-- `VITE_API_URL`: Backend API URL (default: `http://localhost:8080`)
+- `VITE_API_URL`: Backend API URL (default: `http://localhost:8080/api`)
+  
+To configure the frontend API connection:
+```bash
+cd web
+cp .env.example .env
+# Edit .env file if needed to change the backend URL
+```
 
 ## Docker Support
 

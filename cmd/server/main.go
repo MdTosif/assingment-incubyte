@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"github.com/tofiquem/assingment/internal/database"
 	"github.com/tofiquem/assingment/internal/handlers"
 )
@@ -42,12 +43,24 @@ func main() {
 	// Serve static files
 	r.PathPrefix("/").Handler(spaHandler(publicDir))
 
+	// Configure CORS
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+		Debug:            false,
+	})
+
+	// Wrap router with CORS middleware
+	handler := c.Handler(r)
+
 	addr := ":8080"
 	if p := os.Getenv("PORT"); p != "" {
 		addr = ":" + strings.TrimPrefix(p, ":")
 	}
 	log.Printf("listening on %s (serving static from %s)", addr, publicDir)
-	if err := http.ListenAndServe(addr, r); err != nil {
+	if err := http.ListenAndServe(addr, handler); err != nil {
 		log.Fatal(err)
 	}
 }
