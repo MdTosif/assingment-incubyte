@@ -232,9 +232,12 @@ assingment/
 - `JWT_EXPIRATION`: JWT token expiration time (default: `24h`)
 
 ### Frontend
-- `VITE_API_URL`: Backend API URL (default: `http://localhost:8080/api`)
+- `VITE_API_URL`: Backend API URL for production (default: `http://localhost:8080/api`)
   
-To configure the frontend API connection:
+**Development**: Uses Vite proxy (configured in vite.config.js) to avoid CORS issues
+**Production**: Uses `VITE_API_URL` environment variable
+
+To configure the frontend API connection for production:
 ```bash
 cd web
 cp .env.example .env
