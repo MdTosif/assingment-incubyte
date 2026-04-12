@@ -16,7 +16,12 @@ var DB *gorm.DB
 func InitDB() {
 	dbPath := os.Getenv("DATABASE_PATH")
 	if dbPath == "" {
-		dbPath = "./salary_management.db"
+		// Use /tmp for serverless environments (Vercel, etc.)
+		if os.Getenv("VERCEL") == "1" {
+			dbPath = "/tmp/salary_management.db"
+		} else {
+			dbPath = "./salary_management.db"
+		}
 	}
 
 	var err error
