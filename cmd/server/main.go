@@ -43,12 +43,14 @@ func main() {
 	// Serve static files
 	r.PathPrefix("/").Handler(spaHandler(publicDir))
 
-	// Configure CORS
+	// Configure CORS - allow all origins for development
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"*"},
-		AllowCredentials: true,
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders:   []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
+		ExposedHeaders:   []string{"Content-Length", "Content-Type"},
+		AllowCredentials: false,
+		MaxAge:           86400,
 		Debug:            false,
 	})
 
