@@ -40,7 +40,7 @@ coverage-html: test-coverage
 	$(GOCMD) tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
 
 test-unit:
-	$(GOTEST) -v ./internal/models/... ./internal/handlers/... ./internal/database/...
+	$(GOTEST) -v ./pkg/models/... ./pkg/handlers/... ./pkg/database/...
 
 test-integration:
 	$(GOTEST) -v ./cmd/server/...
@@ -65,6 +65,11 @@ clean:
 run:
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/server
 	./$(BINARY_NAME)
+
+# Build web and run server with public assets
+start: build-web
+	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/server
+	PUBLIC_DIR=./web/build ./$(BINARY_NAME)
 
 # Development targets
 dev:
@@ -93,10 +98,10 @@ tdd-watch:
 	gow -run "$(GOTEST) ./..."
 
 tdd-models:
-	$(GOTEST) -v ./internal/models/...
+	$(GOTEST) -v ./pkg/models/...
 
 tdd-handlers:
-	$(GOTEST) -v ./internal/handlers/...
+	$(GOTEST) -v ./pkg/handlers/...
 
 tdd-integration:
 	$(GOTEST) -v ./cmd/server/...
@@ -122,7 +127,8 @@ help:
 	@echo "  deps             - Download and tidy dependencies"
 	@echo "  lint             - Run linter"
 	@echo "  clean            - Clean build artifacts"
-	@echo "  run              - Build and run the application"
+	@echo "  run              - Build and run the backend only"
+	@echo "  start            - Build web + backend and run"
 	@echo "  dev              - Run in development mode"
 	@echo "  seed             - Seed the database"
 	@echo "  docker-build     - Build Docker image"
