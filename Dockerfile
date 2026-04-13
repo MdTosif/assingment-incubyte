@@ -4,23 +4,25 @@ WORKDIR /app
 COPY web/package.json ./
 RUN npm install
 COPY web/ ./
+ENV VITE_API_URL=/api
 RUN npm run build
 
 # Stage 2: compile Go binary and place UI assets in public/
 FROM golang:1.25-alpine AS go-build
 WORKDIR /src
+RUN apk add --no-cache gcc musl-dev sqlite-dev
 COPY go.mod go.sum ./
 RUN go mod download
 COPY cmd/ ./cmd/
 COPY pkg/ ./pkg/
 COPY --from=web-build /app/build ./public
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server
-RUN CGO_ENABLED=0 GOOS=linux go build -o /seed ./cmd/seed
+RUN CGO_ENABLED=1 GOOS=linux go build -o /server ./cmd/server
+RUN CGO_ENABLED=1 GOOS=linux go build -o /seed ./cmd/seed
 
 # Stage 3: minimal runtime image
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates sqlite-libs
 COPY --from=go-build /server /server
 COPY --from=go-build /seed /seed
 COPY --from=go-build /src/public /public
