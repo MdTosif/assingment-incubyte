@@ -1,3 +1,5 @@
+// Package main provides a seed script for generating 10,000 realistic employee records.
+// It uses batch inserts for performance and generates varied data based on job titles and countries.
 package main
 
 import (
@@ -14,6 +16,7 @@ import (
 	"github.com/tofiquem/assingment/pkg/models"
 )
 
+// SeedData holds all data sources used for generating employees.
 type SeedData struct {
 	FirstNames  []string
 	LastNames   []string
@@ -22,6 +25,10 @@ type SeedData struct {
 	Departments []string
 }
 
+// ==================== Main Entry Point ====================
+
+// main initializes the database and seeds it with 10,000 employees.
+// Uses batch inserts (1000 at a time) for optimal performance.
 func main() {
 	// Initialize database
 	database.InitDB()
@@ -64,6 +71,10 @@ func main() {
 	log.Printf("Successfully seeded 10,000 employees in %v", duration)
 }
 
+// ==================== Data Loading ====================
+
+// loadSeedData loads seed data from files and predefined lists.
+// It reads first and last names from files, and uses hardcoded lists for other data.
 func loadSeedData() (*SeedData, error) {
 	data := &SeedData{}
 
@@ -231,6 +242,8 @@ func loadSeedData() (*SeedData, error) {
 	return data, nil
 }
 
+// readFileLines reads lines from a text file.
+// Used to load first and last name lists from seed data files.
 func readFileLines(filename string) ([]string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -250,6 +263,10 @@ func readFileLines(filename string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
+// ==================== Employee Generation ====================
+
+// generateEmployee creates a random employee based on seed data.
+// It generates a realistic salary based on job title and country with ±20% variation.
 func generateEmployee(data *SeedData, index int) *models.Employee {
 	rand.Seed(time.Now().UnixNano() + int64(index))
 
@@ -279,6 +296,10 @@ func generateEmployee(data *SeedData, index int) *models.Employee {
 	}
 }
 
+// ==================== Salary Calculation ====================
+
+// getBaseSalary returns the base salary for a given job title.
+// These values represent average market rates in USD.
 func getBaseSalary(jobTitle string) float64 {
 	salaryRanges := map[string]float64{
 		"Software Engineer":                 80000,
@@ -346,6 +367,8 @@ func getBaseSalary(jobTitle string) float64 {
 	return 80000 // Default salary
 }
 
+// getCountryMultiplier returns a salary multiplier based on country cost of living.
+// Multipliers range from 0.12 (Ghana) to 1.2 (Switzerland) relative to US rates.
 func getCountryMultiplier(country string) float64 {
 	multipliers := map[string]float64{
 		"United States":  1.0,

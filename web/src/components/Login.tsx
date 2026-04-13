@@ -18,6 +18,7 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  // ==================== State ====================
   const navigate = useNavigate();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -27,6 +28,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // ==================== Handlers ====================
+
+  /** Handle form input changes */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -35,6 +39,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }));
   };
 
+  /** Handle login form submission */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -54,6 +59,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       setLoading(false);
     }
   };
+
+  // ==================== Render ====================
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">

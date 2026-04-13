@@ -9,7 +9,14 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
+/**
+ * EmployeeForm Component
+ * 
+ * Provides a form for creating new employees or editing existing ones.
+ * Uses controlled inputs with validation and supports all employee fields.
+ */
 const EmployeeForm: React.FC = () => {
+  // ==================== State & Refs ====================
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const isEditing = !!id;
@@ -28,6 +35,9 @@ const EmployeeForm: React.FC = () => {
     department: '',
   });
 
+  // ==================== Data Constants ====================
+
+  // Predefined list of job titles for the dropdown
   const jobTitles = [
     'Software Engineer',
     'Senior Software Engineer',
@@ -143,6 +153,7 @@ const EmployeeForm: React.FC = () => {
     'Morocco',
   ];
 
+  // Predefined list of departments for the dropdown
   const departments = [
     'Engineering',
     'Product',
@@ -166,12 +177,18 @@ const EmployeeForm: React.FC = () => {
     'QA',
   ];
 
+  // ==================== Effects ====================
+
+  /** Fetch employee data when editing existing employee */
   useEffect(() => {
     if (isEditing) {
       fetchEmployee();
     }
   }, [id, isEditing]);
 
+  // ==================== Data Fetching ====================
+
+  /** Load employee data from API for editing */
   const fetchEmployee = async () => {
     try {
       setLoading(true);
@@ -194,6 +211,9 @@ const EmployeeForm: React.FC = () => {
     }
   };
 
+  // ==================== Form Handlers ====================
+
+  /** Handle input field changes and update form state */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -202,6 +222,7 @@ const EmployeeForm: React.FC = () => {
     }));
   };
 
+  /** Handle form submission - creates or updates employee */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -232,6 +253,8 @@ const EmployeeForm: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // ==================== Render ====================
 
   if (loading && isEditing) {
     return (

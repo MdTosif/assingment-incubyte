@@ -1,3 +1,5 @@
+// Package main provides the HTTP server entry point for the salary management application.
+// It initializes the database, sets up routes, configures CORS, and serves static files.
 package main
 
 import (
@@ -13,6 +15,10 @@ import (
 	"github.com/tofiquem/assingment/pkg/handlers"
 )
 
+// ==================== Main Entry Point ====================
+
+// main initializes and starts the HTTP server.
+// It sets up database connection, API routes, CORS, and static file serving.
 func main() {
 	// Initialize database
 	database.InitDB()
@@ -67,7 +73,10 @@ func main() {
 	}
 }
 
+// ==================== Static File Handler ====================
+
 // spaHandler serves static assets from publicDir and falls back to index.html for client routing.
+// It prevents directory traversal attacks and handles SPA client-side routing.
 func spaHandler(publicDir string) http.Handler {
 	fs := http.FileServer(http.Dir(publicDir))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

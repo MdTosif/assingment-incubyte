@@ -19,6 +19,9 @@ const EmployeePagination: React.FC<EmployeePaginationProps> = ({
   loading,
   onPageChange,
 }) => {
+  // ==================== Helpers ====================
+
+  /** Generate array of page numbers with ellipsis for large page counts */
   const getPageNumbers = useCallback(() => {
     const pages: (number | string)[] = [];
     const maxVisiblePages = 5;

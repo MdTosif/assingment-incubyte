@@ -22,6 +22,9 @@ const EmployeeSearchFilter: React.FC<EmployeeSearchFilterProps> = ({
   onSearchChange,
   onPageSizeChange,
 }) => {
+  // ==================== Handlers ====================
+
+  /** Clear the search input */
   const handleClearSearch = useCallback(() => {
     onSearchChange('');
   }, [onSearchChange]);

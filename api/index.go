@@ -1,3 +1,5 @@
+// Package handler provides the Vercel serverless function entry point for the API.
+// It wraps the HTTP handlers and configures routing for serverless deployment.
 package handler
 
 import (
@@ -14,7 +16,10 @@ func init() {
 	database.InitDB()
 }
 
-// stripAPIPrefix removes /api from the request URL before passing to router
+// ==================== Middleware ====================
+
+// stripAPIPrefix removes the /api prefix from request URLs.
+// Vercel mounts this at /api, so we need to strip the prefix for routing to work correctly.
 func stripAPIPrefix(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Vercel mounts this at /api, so strip /api prefix from URL
@@ -27,7 +32,10 @@ func stripAPIPrefix(next http.Handler) http.Handler {
 	})
 }
 
-// Handler is the entry point for Vercel serverless functions
+// ==================== Handler Entry Point ====================
+
+// Handler is the entry point for Vercel serverless functions.
+// It sets up all routes, middleware, and handles incoming HTTP requests.
 func Handler(w http.ResponseWriter, r *http.Request) {
 	router := mux.NewRouter()
 

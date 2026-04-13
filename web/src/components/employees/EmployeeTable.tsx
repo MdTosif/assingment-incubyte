@@ -21,6 +21,9 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
   isSearching,
   onDelete,
 }) => {
+  // ==================== Helpers ====================
+
+  /** Format salary as USD currency */
   const formatSalary = useCallback((salary: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
