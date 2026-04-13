@@ -1,8 +1,8 @@
 {
-  "outputDirectory": "public",
+  "outputDirectory": "web/build",
   "framework": null,
   "routes": [
-    { "src": "/backend/(.*)", "dest": "/api/index.go" },
-    { "src": "/(.*)", "dest": "/public/index.html" }
+    { "src": "/api/(.*)", "dest": "/api/index.go" },
+    { "src": "/(.*)", "dest": "/web/build/index.html" }
   ]
 }
