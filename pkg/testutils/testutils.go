@@ -1,3 +1,6 @@
+// Package testutils provides utilities for testing the salary management application.
+// It includes helpers for database setup, test data creation, HTTP request handling,
+// and response assertions.
 package testutils
 
 import (
@@ -14,7 +17,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// TestDB creates an in-memory database for testing
+// ==================== Database Setup ====================
+
+// TestDB creates an in-memory SQLite database for testing.
+// It auto-migrates the User and Employee models.
 func TestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -29,7 +35,7 @@ func TestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-// CleanupTestDB closes the test database connection
+// CleanupTestDB closes the test database connection.
 func CleanupTestDB(db *gorm.DB) {
 	sqlDB, err := db.DB()
 	if err == nil {
@@ -37,7 +43,9 @@ func CleanupTestDB(db *gorm.DB) {
 	}
 }
 
-// CreateTestEmployee creates a test employee record
+// ==================== Test Data Creation ====================
+
+// CreateTestEmployee creates a single test employee record in the database.
 func CreateTestEmployee(db *gorm.DB, firstName, lastName, email, jobTitle, country, department string, salary float64) *models.Employee {
 	employee := &models.Employee{
 		FirstName:  firstName,
@@ -56,7 +64,7 @@ func CreateTestEmployee(db *gorm.DB, firstName, lastName, email, jobTitle, count
 	return employee
 }
 
-// CreateTestEmployees creates multiple test employees
+// CreateTestEmployees creates multiple predefined test employees for testing.
 func CreateTestEmployees(db *gorm.DB) []models.Employee {
 	employees := []models.Employee{
 		{FirstName: "John", LastName: "Doe", Email: "john@example.com", JobTitle: "Developer", Country: "USA", Salary: 75000.0, Department: "Engineering"},
@@ -75,7 +83,8 @@ func CreateTestEmployees(db *gorm.DB) []models.Employee {
 	return employees
 }
 
-// MockDB sets up a mock database for testing handlers
+// MockDB sets up a mock database and overrides the global database.DB variable.
+// Returns the test database for cleanup.
 func MockDB(t *testing.T) *gorm.DB {
 	// Create test DB
 	testDB := TestDB(t)
@@ -87,12 +96,15 @@ func MockDB(t *testing.T) *gorm.DB {
 	return testDB
 }
 
-// RestoreDB restores the original database connection
+// RestoreDB restores the original database connection to the global database.DB variable.
 func RestoreDB(originalDB *gorm.DB) {
 	database.DB = originalDB
 }
 
-// CreateJSONRequest creates an HTTP request with JSON body
+// ==================== HTTP Request Helpers ====================
+
+// CreateJSONRequest creates an HTTP request with a JSON body.
+// Sets the Content-Type header to application/json.
 func CreateJSONRequest(method, url string, body interface{}) (*http.Request, error) {
 	var buf bytes.Buffer
 	if body != nil {
@@ -110,7 +122,7 @@ func CreateJSONRequest(method, url string, body interface{}) (*http.Request, err
 	return req, nil
 }
 
-// ExecuteRequest executes an HTTP request and returns the response
+// ExecuteRequest executes an HTTP request against a handler and returns the response recorder.
 func ExecuteRequest(handler http.HandlerFunc, method, url string, body interface{}) (*httptest.ResponseRecorder, error) {
 	req, err := CreateJSONRequest(method, url, body)
 	if err != nil {
@@ -122,19 +134,21 @@ func ExecuteRequest(handler http.HandlerFunc, method, url string, body interface
 	return rr, nil
 }
 
-// ParseJSONResponse parses JSON response into a struct
+// ==================== Response Assertions ====================
+
+// ParseJSONResponse parses a JSON response body into the provided struct.
 func ParseJSONResponse(rr *httptest.ResponseRecorder, v interface{}) error {
 	return json.Unmarshal(rr.Body.Bytes(), v)
 }
 
-// AssertStatusCode checks if the response has the expected status code
+// AssertStatusCode checks if the response status code matches the expected value.
 func AssertStatusCode(t *testing.T, rr *httptest.ResponseRecorder, expected int) {
 	if rr.Code != expected {
 		t.Errorf("Expected status code %d, got %d", expected, rr.Code)
 	}
 }
 
-// AssertContentType checks if the response has the expected content type
+// AssertContentType checks if the response Content-Type header matches the expected value.
 func AssertContentType(t *testing.T, rr *httptest.ResponseRecorder, expected string) {
 	contentType := rr.Header().Get("Content-Type")
 	if contentType != expected {
@@ -142,7 +156,9 @@ func AssertContentType(t *testing.T, rr *httptest.ResponseRecorder, expected str
 	}
 }
 
-// SetTestEnv sets environment variables for testing
+// ==================== Environment Helpers ====================
+
+// SetTestEnv sets an environment variable and returns a cleanup function to restore the original value.
 func SetTestEnv(key, value string) func() {
 	original := os.Getenv(key)
 	os.Setenv(key, value)

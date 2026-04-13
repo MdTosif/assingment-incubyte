@@ -2,7 +2,7 @@
   "outputDirectory": "public",
   "framework": null,
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/index.go" },
+    { "src": "/backend/(.*)", "dest": "/api/index.go" },
     { "src": "/(.*)", "dest": "/public/index.html" }
   ]
 }

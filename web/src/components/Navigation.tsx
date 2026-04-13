@@ -26,11 +26,15 @@ interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ user, onLogout }) => {
+  // ==================== State ====================
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
+  // ==================== Effects ====================
+
+  /** Check backend health status on mount */
   useEffect(() => {
     const checkHealth = async () => {
       try {
@@ -47,18 +51,26 @@ const Navigation: React.FC<NavigationProps> = ({ user, onLogout }) => {
     checkHealth();
   }, []);
 
+  // ==================== Navigation Items ====================
+
+  /** Main navigation links for the application */
   const navigation = [
     { name: 'Employees', href: '/', icon: Users },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Add Employee', href: '/add-employee', icon: UserPlus },
   ];
 
+  // ==================== Helpers ====================
+
+  /** Check if a navigation link is currently active */
   const isActive = (href: string) => {
     if (href === '/') {
       return location.pathname === '/' || location.pathname.startsWith('/edit-employee');
     }
     return location.pathname === href;
   };
+
+  // ==================== Render ====================
 
   return (
     <nav className="bg-background border-b">

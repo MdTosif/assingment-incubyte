@@ -20,23 +20,38 @@ interface EmployeeActionsDropdownProps {
   onDelete: (id: number) => void;
 }
 
+/**
+ * EmployeeActionsDropdown Component
+ *
+ * Dropdown menu providing actions for an employee record:
+ * - View/Edit: Navigate to employee edit page
+ * - Delete: Trigger delete confirmation
+ */
 const EmployeeActionsDropdown: React.FC<EmployeeActionsDropdownProps> = ({
   employeeId,
   onDelete,
 }) => {
+  // ==================== Hooks ====================
   const navigate = useNavigate();
 
+  // ==================== Handlers ====================
+
+  /** Navigate to employee detail/edit page */
   const handleView = () => {
     navigate(`/edit-employee/${employeeId}`);
   };
 
+  /** Navigate to employee edit page */
   const handleEdit = () => {
     navigate(`/edit-employee/${employeeId}`);
   };
 
+  /** Trigger delete callback for this employee */
   const handleDelete = () => {
     onDelete(employeeId);
   };
+
+  // ==================== Render ====================
 
   return (
     <DropdownMenu>

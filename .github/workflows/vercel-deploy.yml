@@ -32,6 +32,7 @@ jobs:
         run: |
           cd web
           npm ci
+          export VITE_API_URL=/backend/api
           npm run build
           cp -r build/* ../public/
 
