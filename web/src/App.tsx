@@ -1,3 +1,12 @@
+/**
+ * App Component
+ * 
+ * Root application component that handles:
+ * - Authentication state management
+ * - Route protection based on auth status
+ * - Token validation on app load
+ */
+
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { User } from './types';
@@ -7,9 +16,11 @@ import EmployeeForm from './components/EmployeeForm';
 import './App.css';
 
 function App() {
+  // ==================== State ====================
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ==================== Authentication ====================
   const checkAuth = () => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
@@ -37,6 +48,8 @@ function App() {
     setLoading(false);
   }, []);
 
+  // ==================== Effects ====================
+
   // Listen for storage changes (login from other tabs)
   useEffect(() => {
     const handleStorageChange = () => {
@@ -46,17 +59,21 @@ function App() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  /** Logout handler - clears local storage and resets user state */
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
   };
 
+  /** Login handler - stores token/user and updates state */
   const handleLogin = (token: string, userData: User) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
   };
+
+  // ==================== Render ====================
 
   if (loading) {
     return (

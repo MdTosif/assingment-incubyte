@@ -1,3 +1,4 @@
+// Package services provides business logic for authentication and user management.
 package services
 
 import (
@@ -9,10 +10,18 @@ import (
 	"github.com/tofiquem/assingment/pkg/models"
 )
 
+// ==================== Service Definition ====================
+
+// JWTService handles JWT token generation and validation.
+// It uses HMAC-SHA256 for signing tokens.
 type JWTService struct {
 	secretKey []byte
 }
 
+// ==================== Constructor ====================
+
+// NewJWTService creates a new JWTService with the secret key from environment.
+// Defaults to a warning message if JWT_SECRET is not set.
 func NewJWTService() *JWTService {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
@@ -24,7 +33,10 @@ func NewJWTService() *JWTService {
 	}
 }
 
-// GenerateToken creates a new JWT token for the user
+// ==================== Token Generation ====================
+
+// GenerateToken creates a new JWT token for the given user.
+// The token expires after 24 hours and contains user claims.
 func (j *JWTService) GenerateToken(user *models.User) (string, time.Time, error) {
 	expiresAt := time.Now().Add(24 * time.Hour) // 24 hours expiration
 
@@ -47,7 +59,10 @@ func (j *JWTService) GenerateToken(user *models.User) (string, time.Time, error)
 	return tokenString, expiresAt, nil
 }
 
-// ValidateToken validates a JWT token and returns the claims
+// ==================== Token Validation ====================
+
+// ValidateToken validates a JWT token string and returns the claims.
+// It verifies the token signature and structure.
 func (j *JWTService) ValidateToken(tokenString string) (*jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -67,7 +82,8 @@ func (j *JWTService) ValidateToken(tokenString string) (*jwt.MapClaims, error) {
 	return nil, fmt.Errorf("invalid token")
 }
 
-// ExtractClaims extracts claims from a token (without validation)
+// ExtractClaims extracts claims from a token without full validation.
+// Useful for inspecting token content before validation.
 func (j *JWTService) ExtractClaims(tokenString string) (map[string]interface{}, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return j.secretKey, nil
@@ -84,7 +100,9 @@ func (j *JWTService) ExtractClaims(tokenString string) (map[string]interface{}, 
 	return nil, fmt.Errorf("no claims found in token")
 }
 
-// GetUserIDFromToken extracts user ID from token claims
+// ==================== Claims Helpers ====================
+
+// GetUserIDFromToken extracts the user ID from token claims.
 func (j *JWTService) GetUserIDFromToken(claims jwt.MapClaims) (uint, error) {
 	userID, ok := claims["user_id"].(float64)
 	if !ok {
@@ -93,7 +111,7 @@ func (j *JWTService) GetUserIDFromToken(claims jwt.MapClaims) (uint, error) {
 	return uint(userID), nil
 }
 
-// GetUserEmailFromToken extracts email from token claims
+// GetUserEmailFromToken extracts the email from token claims.
 func (j *JWTService) GetUserEmailFromToken(claims jwt.MapClaims) (string, error) {
 	email, ok := claims["email"].(string)
 	if !ok {
@@ -102,7 +120,7 @@ func (j *JWTService) GetUserEmailFromToken(claims jwt.MapClaims) (string, error)
 	return email, nil
 }
 
-// GetUserRoleFromToken extracts role from token claims
+// GetUserRoleFromToken extracts the role from token claims.
 func (j *JWTService) GetUserRoleFromToken(claims jwt.MapClaims) (string, error) {
 	role, ok := claims["role"].(string)
 	if !ok {
@@ -111,7 +129,7 @@ func (j *JWTService) GetUserRoleFromToken(claims jwt.MapClaims) (string, error) 
 	return role, nil
 }
 
-// IsTokenExpired checks if the token is expired
+// IsTokenExpired checks if the token expiration time has passed.
 func (j *JWTService) IsTokenExpired(claims jwt.MapClaims) bool {
 	expClaim, exists := claims["exp"]
 	if !exists {

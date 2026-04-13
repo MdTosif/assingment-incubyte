@@ -1,3 +1,5 @@
+// Package handlers provides HTTP request handlers for the salary management API.
+// It handles employee CRUD operations and serves JSON responses.
 package handlers
 
 import (
@@ -11,16 +13,25 @@ import (
 	"gorm.io/gorm"
 )
 
+// ==================== Handler Definition ====================
+
+// EmployeeHandler handles HTTP requests for employee management.
+// It provides endpoints for CRUD operations on employee records.
 type EmployeeHandler struct {
 	db *gorm.DB
 }
 
+// ==================== Constructor & Route Registration ====================
+
+// NewEmployeeHandler creates a new EmployeeHandler with the default database connection.
 func NewEmployeeHandler() *EmployeeHandler {
 	return &EmployeeHandler{
 		db: database.DB,
 	}
 }
 
+// RegisterRoutes registers all employee routes with the given router.
+// Routes: GET /api/employees, POST /api/employees, GET/PUT/DELETE /api/employees/{id}
 func (h *EmployeeHandler) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/api/employees", h.GetEmployees).Methods("GET")
 	r.HandleFunc("/api/employees", h.CreateEmployee).Methods("POST")
@@ -29,9 +40,15 @@ func (h *EmployeeHandler) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/api/employees/{id}", h.DeleteEmployee).Methods("DELETE")
 }
 
+// ==================== CRUD Operations ====================
+
+// GetEmployees returns a paginated list of employees with optional search.
+// Query params: page (default: 1), limit (default: 50, max: 100), search (optional)
+// Response: {employees, total, page, limit, pages}
 func (h *EmployeeHandler) GetEmployees(w http.ResponseWriter, r *http.Request) {
 	page := 1
 	limit := 50
+	search := r.URL.Query().Get("search")
 
 	if p := r.URL.Query().Get("page"); p != "" {
 		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
@@ -50,12 +67,23 @@ func (h *EmployeeHandler) GetEmployees(w http.ResponseWriter, r *http.Request) {
 	var employees []models.Employee
 	var total int64
 
-	if err := h.db.Model(&models.Employee{}).Count(&total).Error; err != nil {
+	query := h.db.Model(&models.Employee{})
+
+	// Apply search filter if provided
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		query = query.Where(
+			"first_name ILIKE ? OR last_name ILIKE ? OR email ILIKE ? OR job_title ILIKE ? OR country ILIKE ? OR department ILIKE ?",
+			searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern,
+		)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
 		http.Error(w, "Failed to count employees", http.StatusInternalServerError)
 		return
 	}
 
-	if err := h.db.Order("created_at DESC").Offset(offset).Limit(limit).Find(&employees).Error; err != nil {
+	if err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&employees).Error; err != nil {
 		http.Error(w, "Failed to fetch employees", http.StatusInternalServerError)
 		return
 	}
@@ -72,6 +100,9 @@ func (h *EmployeeHandler) GetEmployees(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// CreateEmployee creates a new employee from the request body.
+// Expects: CreateEmployeeRequest JSON body
+// Returns: 201 Created with the created employee
 func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateEmployeeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -90,6 +121,8 @@ func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(employee)
 }
 
+// GetEmployee returns a single employee by ID.
+// Returns: 200 OK with employee, 404 Not Found, or 400 Bad Request
 func (h *EmployeeHandler) GetEmployee(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -114,6 +147,9 @@ func (h *EmployeeHandler) GetEmployee(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(employee)
 }
 
+// UpdateEmployee updates an existing employee by ID.
+// Expects: UpdateEmployeeRequest JSON body (partial updates supported)
+// Returns: 200 OK with updated employee, 404 Not Found, or 400 Bad Request
 func (h *EmployeeHandler) UpdateEmployee(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -150,6 +186,8 @@ func (h *EmployeeHandler) UpdateEmployee(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(employee)
 }
 
+// DeleteEmployee permanently deletes an employee by ID.
+// Returns: 204 No Content, 404 Not Found, or 400 Bad Request
 func (h *EmployeeHandler) DeleteEmployee(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]

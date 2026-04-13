@@ -1,26 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Building2, 
-  Users, 
-  TrendingUp, 
-  DollarSign, 
+import {
+  Building2,
+  Users,
+  TrendingUp,
+  DollarSign,
   LogOut,
   Menu,
-  Search,
   Plus,
-  Filter
+  Loader2
 } from 'lucide-react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Badge } from './ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Avatar, AvatarFallback } from './ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { employeeAPI, analyticsAPI, authAPI } from '../services/api';
-import { Employee, CountrySalaryStats, DepartmentSalaryStats, User } from '../types';
+import { Employee, DepartmentSalaryStats, User, EmployeesResponse } from '../types';
+import { useDebounce } from '../hooks/useDebounce';
+import { EmployeeSearchFilter, EmployeeTable, EmployeePagination } from './employees';
 
 interface Analytics {
   totalEmployees: number;
@@ -30,14 +28,43 @@ interface Analytics {
 }
 
 const Dashboard: React.FC = () => {
+  // ==================== State ====================
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Employee list state with server-side pagination
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchInput, setSearchInput] = useState('');
+  const [tableLoading, setTableLoading] = useState(false);
+  const debouncedSearch = useDebounce(searchInput, 500);
+
+  // ==================== Data Fetching ====================
+
+  /** Fetch employees with server-side pagination and optional search */
+  const fetchEmployees = useCallback(async (page: number, limit: number, search?: string) => {
+    console.log('[Dashboard] fetchEmployees called:', { page, limit, search });
+    try {
+      setTableLoading(true);
+      const response: EmployeesResponse = await employeeAPI.getEmployees(page, limit, search);
+      console.log('[Dashboard] API response:', { total: response.total, pages: response.pages, count: response.employees.length });
+      setEmployees(response.employees);
+      setTotalPages(response.pages);
+      setTotalItems(response.total);
+    } catch (error) {
+      console.error('Failed to fetch employees:', error);
+    } finally {
+      setTableLoading(false);
+    }
+  }, []);
+
+  // Initial load
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -49,16 +76,18 @@ const Dashboard: React.FC = () => {
         setUser(JSON.parse(userData));
 
         const [employeesData, salaryData, departmentData] = await Promise.all([
-          employeeAPI.getEmployees(),
+          employeeAPI.getEmployees(1, 10),
           analyticsAPI.getSalaryByCountry(),
           analyticsAPI.getDepartmentInsights()
         ]);
 
         setEmployees(employeesData.employees || []);
-        
+        setTotalPages(employeesData.pages || 0);
+        setTotalItems(employeesData.total || 0);
+
         // Calculate analytics from API responses
         const totalEmployees = employeesData.total || 0;
-        const avgSalary = salaryData.length > 0 ? 
+        const avgSalary = salaryData.length > 0 ?
           salaryData.reduce((sum: number, country: any) => sum + country.average, 0) / salaryData.length : 0;
         const totalSalaryExpense = employeesData.employees?.reduce((sum: number, emp: Employee) => sum + emp.salary, 0) || 0;
 
@@ -78,6 +107,22 @@ const Dashboard: React.FC = () => {
     loadData();
   }, [navigate]);
 
+  // Fetch when pagination/search changes
+  useEffect(() => {
+    console.log('[Dashboard] useEffect triggered:', { loading, currentPage, pageSize, debouncedSearch });
+    if (!loading) {
+      fetchEmployees(currentPage, pageSize, debouncedSearch);
+    }
+  }, [currentPage, pageSize, debouncedSearch, fetchEmployees, loading]);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
+
+  // ==================== Handlers ====================
+
+  /** Handle user logout - calls API and clears local storage */
   const handleLogout = async () => {
     try {
       await authAPI.logout();
@@ -90,13 +135,38 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const filteredEmployees = employees.filter(emp =>
-    emp.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  /** Handle employee deletion with confirmation dialog */
+  const handleDelete = useCallback(async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this employee?')) {
+      return;
+    }
+    try {
+      await employeeAPI.deleteEmployee(id);
+      fetchEmployees(currentPage, pageSize, debouncedSearch);
+    } catch (error) {
+      console.error('Failed to delete employee:', error);
+    }
+  }, [currentPage, pageSize, debouncedSearch, fetchEmployees]);
+
+  /** Handle pagination page changes */
+  const handlePageChange = useCallback((page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  }, [totalPages]);
+
+  /** Handle page size changes - resets to page 1 */
+  const handlePageSizeChange = useCallback((value: number) => {
+    setPageSize(value);
+    setCurrentPage(1);
+  }, []);
+
+  /** Handle search input changes */
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value);
+  }, []);
+
+  // ==================== Render ====================
 
   if (loading) {
     return (
@@ -225,88 +295,54 @@ const Dashboard: React.FC = () => {
 
         {/* Employee Table */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Employees</CardTitle>
-                <CardDescription>Manage your team members</CardDescription>
+          <CardHeader className="pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-1">
+                <CardTitle className="text-2xl">Employees</CardTitle>
+                <CardDescription className="text-base">
+                  Manage your team members
+                </CardDescription>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search employees..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 w-[250px]"
-                  />
-                </div>
-                <Button size="sm" onClick={() => navigate('/add-employee')}>
+              <div className="flex items-center gap-2">
+                <Button onClick={() => navigate('/add-employee')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Employee
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filter
                 </Button>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Job Title</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Country</TableHead>
-                  <TableHead>Salary</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <Avatar>
-                          <AvatarFallback>
-                            {employee.firstName[0]}{employee.lastName[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{employee.firstName} {employee.lastName}</p>
-                          <p className="text-sm text-muted-foreground">{employee.email}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{employee.jobTitle}</TableCell>
-                    <TableCell>{employee.department}</TableCell>
-                    <TableCell>{employee.country}</TableCell>
-                    <TableCell>${employee.salary.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">Active</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            {/* ... menu icon ... */}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent className="pt-0 space-y-4">
+            {/* Search and Filters */}
+            <EmployeeSearchFilter
+              searchInput={searchInput}
+              pageSize={pageSize}
+              onSearchChange={handleSearchChange}
+              onPageSizeChange={handlePageSizeChange}
+            />
+
+            {/* Loading overlay */}
+            {tableLoading && (
+              <div className="flex justify-center items-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            )}
+
+            {/* Employee Table */}
+            <EmployeeTable
+              employees={employees}
+              isSearching={!!debouncedSearch}
+              onDelete={handleDelete}
+            />
+
+            {/* Pagination */}
+            <EmployeePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              loading={tableLoading}
+              onPageChange={handlePageChange}
+            />
           </CardContent>
         </Card>
       </main>

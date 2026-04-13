@@ -1,3 +1,6 @@
+// ==================== Entity Types ====================
+
+/** Employee entity representing an employee in the system */
 export interface Employee {
   id: number;
   firstName: string;
@@ -12,6 +15,9 @@ export interface Employee {
   updatedAt: string;
 }
 
+// ==================== Request Types ====================
+
+/** Request body for creating a new employee */
 export interface CreateEmployeeRequest {
   firstName: string;
   lastName: string;
@@ -22,6 +28,7 @@ export interface CreateEmployeeRequest {
   department: string;
 }
 
+/** Request body for updating an existing employee (all fields optional) */
 export interface UpdateEmployeeRequest {
   firstName?: string;
   lastName?: string;
@@ -32,6 +39,9 @@ export interface UpdateEmployeeRequest {
   department?: string;
 }
 
+// ==================== Response Types ====================
+
+/** Paginated response for employee list endpoints */
 export interface EmployeesResponse {
   employees: Employee[];
   total: number;
@@ -40,6 +50,9 @@ export interface EmployeesResponse {
   pages: number;
 }
 
+// ==================== Statistics Types ====================
+
+/** Salary statistics aggregated by country */
 export interface CountrySalaryStats {
   country: string;
   min: number;
@@ -48,12 +61,14 @@ export interface CountrySalaryStats {
   count: number;
 }
 
+/** Salary statistics aggregated by job title within a country */
 export interface JobTitleSalaryStats {
   jobTitle: string;
   average: number;
   count: number;
 }
 
+/** Salary statistics aggregated by department */
 export interface DepartmentSalaryStats {
   department: string;
   min: number;
@@ -62,11 +77,14 @@ export interface DepartmentSalaryStats {
   count: number;
 }
 
+/** Health check response from the backend */
 export interface HealthResponse {
   status: string;
 }
 
-// Authentication types
+// ==================== User Types ====================
+
+/** Authenticated user (HR or Admin) */
 export interface User {
   id: number;
   email: string;
@@ -79,17 +97,20 @@ export interface User {
   updatedAt: string;
 }
 
+/** Login request with email and password */
 export interface LoginRequest {
   email: string;
   password: string;
 }
 
+/** Login response with JWT token and user data */
 export interface LoginResponse {
   token: string;
   expiresAt: string;
   user: User;
 }
 
+/** Request body for changing user password */
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;

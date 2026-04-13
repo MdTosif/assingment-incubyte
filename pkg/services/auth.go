@@ -1,3 +1,5 @@
+// Package services provides business logic for authentication and user management.
+// It handles login, user CRUD operations, token validation, and password management.
 package services
 
 import (
@@ -8,21 +10,33 @@ import (
 	"gorm.io/gorm"
 )
 
+// ==================== Service Definition ====================
+
+// AuthService handles authentication and user management operations.
+// It uses JWT for token generation and bcrypt for password hashing.
 type AuthService struct {
-	db             *gorm.DB
-	jwtService     *JWTService
+	db              *gorm.DB
+	jwtService      *JWTService
 	passwordService *PasswordService
 }
 
+// ==================== Constructor ====================
+
+// NewAuthService creates a new AuthService with the given database connection.
+// It initializes the required JWT and password services.
 func NewAuthService(db *gorm.DB) *AuthService {
 	return &AuthService{
-		db:             db,
-		jwtService:     NewJWTService(),
+		db:              db,
+		jwtService:      NewJWTService(),
 		passwordService: NewPasswordService(),
 	}
 }
 
-// Login authenticates a user and returns a JWT token
+// ==================== Authentication ====================
+
+// Login authenticates a user with email and password.
+// It returns a JWT token and user information on success.
+// Errors: invalid credentials, inactive account, database errors.
 func (a *AuthService) Login(email, password string) (*models.LoginResponse, error) {
 	// Find user by email
 	var user models.User
@@ -65,7 +79,9 @@ func (a *AuthService) Login(email, password string) (*models.LoginResponse, erro
 	}, nil
 }
 
-// CreateUser creates a new HR user (admin only)
+// CreateUser creates a new HR or Admin user.
+// It validates password strength and hashes the password before storage.
+// Only admin users should have access to this function.
 func (a *AuthService) CreateUser(req *models.CreateHRUserRequest) (*models.User, error) {
 	// Validate password strength
 	if err := a.passwordService.ValidatePasswordStrength(req.Password); err != nil {
@@ -95,7 +111,10 @@ func (a *AuthService) CreateUser(req *models.CreateHRUserRequest) (*models.User,
 	return &user, nil
 }
 
-// GetUserByID retrieves a user by ID
+// ==================== User Management ====================
+
+// GetUserByID retrieves a user by their ID.
+// Returns the user with password intact (internal use only).
 func (a *AuthService) GetUserByID(id uint) (*models.User, error) {
 	var user models.User
 	if err := a.db.First(&user, id).Error; err != nil {
@@ -107,7 +126,8 @@ func (a *AuthService) GetUserByID(id uint) (*models.User, error) {
 	return &user, nil
 }
 
-// GetUserByEmail retrieves a user by email
+// GetUserByEmail retrieves a user by their email address.
+// Returns the user with password intact (for authentication use).
 func (a *AuthService) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	if err := a.db.Where("email = ?", email).First(&user).Error; err != nil {
@@ -119,7 +139,10 @@ func (a *AuthService) GetUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-// ValidateToken validates a JWT token and returns the user
+// ==================== Token Validation ====================
+
+// ValidateToken validates a JWT token and returns the associated user.
+// It checks token validity, expiration, and user account status.
 func (a *AuthService) ValidateToken(tokenString string) (*models.User, error) {
 	// Validate token
 	claims, err := a.jwtService.ValidateToken(tokenString)
@@ -152,7 +175,8 @@ func (a *AuthService) ValidateToken(tokenString string) (*models.User, error) {
 	return user, nil
 }
 
-// UpdateUser updates user information
+// UpdateUser updates an existing user's information.
+// Only provided fields (non-nil) are updated, allowing partial updates.
 func (a *AuthService) UpdateUser(id uint, req *models.UpdateUserRequest) (*models.User, error) {
 	var user models.User
 	if err := a.db.First(&user, id).Error; err != nil {
@@ -186,7 +210,8 @@ func (a *AuthService) UpdateUser(id uint, req *models.UpdateUserRequest) (*model
 	return &user, nil
 }
 
-// DeleteUser soft deletes a user
+// DeleteUser permanently deletes a user from the database.
+// Use with caution - this action cannot be undone.
 func (a *AuthService) DeleteUser(id uint) error {
 	var user models.User
 	if err := a.db.First(&user, id).Error; err != nil {
@@ -203,7 +228,8 @@ func (a *AuthService) DeleteUser(id uint) error {
 	return nil
 }
 
-// ListUsers returns a paginated list of users
+// ListUsers returns a paginated list of users without sensitive data.
+// Passwords are removed from the returned users for security.
 func (a *AuthService) ListUsers(page, limit int) ([]models.User, int64, error) {
 	var users []models.User
 	var total int64
@@ -228,7 +254,8 @@ func (a *AuthService) ListUsers(page, limit int) ([]models.User, int64, error) {
 	return users, total, nil
 }
 
-// ChangePassword changes a user's password
+// ChangePassword changes a user's password after verifying the current password.
+// It validates the new password strength before updating.
 func (a *AuthService) ChangePassword(userID uint, currentPassword, newPassword string) error {
 	// Get user
 	user, err := a.GetUserByID(userID)
