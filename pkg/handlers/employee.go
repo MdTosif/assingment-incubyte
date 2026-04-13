@@ -32,6 +32,7 @@ func (h *EmployeeHandler) RegisterRoutes(r *mux.Router) {
 func (h *EmployeeHandler) GetEmployees(w http.ResponseWriter, r *http.Request) {
 	page := 1
 	limit := 50
+	search := r.URL.Query().Get("search")
 
 	if p := r.URL.Query().Get("page"); p != "" {
 		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
@@ -50,12 +51,23 @@ func (h *EmployeeHandler) GetEmployees(w http.ResponseWriter, r *http.Request) {
 	var employees []models.Employee
 	var total int64
 
-	if err := h.db.Model(&models.Employee{}).Count(&total).Error; err != nil {
+	query := h.db.Model(&models.Employee{})
+
+	// Apply search filter if provided
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		query = query.Where(
+			"first_name ILIKE ? OR last_name ILIKE ? OR email ILIKE ? OR job_title ILIKE ? OR country ILIKE ? OR department ILIKE ?",
+			searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern,
+		)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
 		http.Error(w, "Failed to count employees", http.StatusInternalServerError)
 		return
 	}
 
-	if err := h.db.Order("created_at DESC").Offset(offset).Limit(limit).Find(&employees).Error; err != nil {
+	if err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&employees).Error; err != nil {
 		http.Error(w, "Failed to fetch employees", http.StatusInternalServerError)
 		return
 	}

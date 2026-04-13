@@ -62,10 +62,14 @@ const api = createApiClient();
 
 // Employee API calls
 export const employeeAPI = {
-  // Get all employees with pagination
-  getEmployees: async (page = 1, limit = 50): Promise<EmployeesResponse> => {
+  // Get all employees with pagination and optional search
+  getEmployees: async (page = 1, limit = 10, search?: string): Promise<EmployeesResponse> => {
+    const params: Record<string, unknown> = { page, limit };
+    if (search && search.trim()) {
+      params.search = search.trim();
+    }
     const response: AxiosResponse<EmployeesResponse> = await api.get('/employees', {
-      params: { page, limit }
+      params
     });
     return response.data;
   },
