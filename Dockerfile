@@ -16,12 +16,21 @@ COPY pkg/ ./pkg/
 COPY --from=web-build /app/build ./public
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -o /seed ./cmd/seed
 
 # Stage 3: minimal runtime image
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates
 COPY --from=go-build /server /server
+COPY --from=go-build /seed /seed
 COPY --from=go-build /src/public /public
+COPY seed/ /seed-data/
 ENV PUBLIC_DIR=/public
+ENV SEED_DATA_DIR=/seed-data
 EXPOSE 8080
-ENTRYPOINT ["/server"]
+
+# Copy and set up entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

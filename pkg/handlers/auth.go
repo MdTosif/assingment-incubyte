@@ -1,3 +1,4 @@
+// Package handlers provides HTTP request handlers for the salary management API.
 package handlers
 
 import (
@@ -13,16 +14,29 @@ import (
 	"gorm.io/gorm"
 )
 
+// ==================== Handler Definition ====================
+
+// AuthHandler handles HTTP requests for authentication and user management.
+// It provides endpoints for login, user CRUD operations, and middleware for authorization.
 type AuthHandler struct {
 	authService *services.AuthService
 }
 
+// ==================== Constructor ====================
+
+// NewAuthHandler creates a new AuthHandler with the given database connection.
 func NewAuthHandler(db *gorm.DB) *AuthHandler {
 	return &AuthHandler{
 		authService: services.NewAuthService(db),
 	}
 }
 
+// ==================== Route Registration ====================
+
+// RegisterRoutes registers all authentication and user routes with the given router.
+// Public routes: POST /api/auth/login
+// Protected routes: GET /api/auth/me, POST /api/auth/logout, POST /api/auth/change-password
+// Admin routes: GET/POST /api/admin/users, PUT/DELETE /api/admin/users/{id}
 func (h *AuthHandler) RegisterRoutes(r *mux.Router) {
 	// Public routes
 	r.HandleFunc("/api/auth/login", h.Login).Methods("POST")
@@ -50,7 +64,11 @@ func (h *AuthHandler) RegisterRoutes(r *mux.Router) {
 	h.registerAnalyticsRoutes(r)
 }
 
-// Login handles user authentication
+// ==================== Public Authentication ====================
+
+// Login authenticates a user with email and password.
+// Expects: LoginRequest JSON body
+// Returns: 200 OK with LoginResponse (token, expiresAt, user), or 401 Unauthorized
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -75,7 +93,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetMe returns the current authenticated user
+// ==================== Protected User Operations ====================
+
+// GetMe returns the currently authenticated user from the request context.
+// Returns: 200 OK with user data (safe user without password)
 func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	user, ok := context.Get(r, "user").(*models.User)
 	if !ok {
@@ -87,7 +108,9 @@ func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user.ToSafeUser())
 }
 
-// Logout handles user logout (client-side token removal)
+// Logout handles user logout. In a stateless JWT system, the actual token removal
+// is handled client-side. This endpoint provides a server-side confirmation.
+// Returns: 200 OK with success message
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// In a stateless JWT system, logout is handled client-side
 	// We can implement token blacklisting if needed
@@ -95,7 +118,9 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
 }
 
-// ChangePassword handles password change for current user
+// ChangePassword handles password change for the currently authenticated user.
+// Expects: JSON body with currentPassword and newPassword
+// Returns: 200 OK with success message, or 400 Bad Request
 func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	user, ok := context.Get(r, "user").(*models.User)
 	if !ok {
@@ -129,7 +154,11 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Password changed successfully"})
 }
 
-// CreateUser handles user creation (admin only)
+// ==================== Admin User Management ====================
+
+// CreateUser creates a new HR or Admin user (admin only).
+// Expects: CreateHRUserRequest JSON body with all required fields
+// Returns: 201 Created with created user (safe user without password), or 400 Bad Request
 func (h *AuthHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateHRUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -161,7 +190,9 @@ func (h *AuthHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user.ToSafeUser())
 }
 
-// ListUsers returns a paginated list of users (admin only)
+// ListUsers returns a paginated list of all users (admin only).
+// Query params: page (default: 1), limit (default: 20, max: 100)
+// Response: {users, total, page, limit, pages}
 func (h *AuthHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	// Parse pagination parameters
 	page := 1
@@ -198,7 +229,9 @@ func (h *AuthHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// UpdateUser handles user updates (admin only)
+// UpdateUser updates an existing user by ID (admin only).
+// Expects: UpdateUserRequest JSON body (partial updates supported)
+// Returns: 200 OK with updated user, 404 Not Found, or 400 Bad Request
 func (h *AuthHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -232,7 +265,8 @@ func (h *AuthHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user.ToSafeUser())
 }
 
-// DeleteUser handles user deletion (admin only)
+// DeleteUser permanently deletes a user by ID (admin only).
+// Returns: 204 No Content, 404 Not Found, or 400 Bad Request
 func (h *AuthHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -251,7 +285,11 @@ func (h *AuthHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// authMiddleware validates JWT tokens and sets user in context
+// ==================== Middleware ====================
+
+// authMiddleware validates JWT tokens and sets the authenticated user in the request context.
+// It expects the Authorization header in the format "Bearer <token>".
+// Returns: 401 Unauthorized if token is missing or invalid.
 func (h *AuthHandler) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -280,7 +318,9 @@ func (h *AuthHandler) authMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// hrMiddleware ensures user has HR role or higher
+// hrMiddleware ensures the authenticated user has HR or Admin role permissions.
+// Must be used after authMiddleware to ensure user is set in context.
+// Returns: 403 Forbidden if user doesn't have HR access.
 func (h *AuthHandler) hrMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := context.Get(r, "user").(*models.User)
@@ -292,7 +332,9 @@ func (h *AuthHandler) hrMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// adminMiddleware ensures user has admin role
+// adminMiddleware ensures the authenticated user has Admin role.
+// Must be used after authMiddleware to ensure user is set in context.
+// Returns: 403 Forbidden if user doesn't have admin access.
 func (h *AuthHandler) adminMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := context.Get(r, "user").(*models.User)
@@ -304,7 +346,10 @@ func (h *AuthHandler) adminMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// registerEmployeeRoutes registers employee routes with authentication middleware
+// ==================== Route Registration Helpers ====================
+
+// registerEmployeeRoutes registers employee routes with authentication and HR middleware.
+// All employee endpoints require a valid JWT token and HR/Admin role.
 func (h *AuthHandler) registerEmployeeRoutes(r *mux.Router) {
 	employeeHandler := NewEmployeeHandler()
 
@@ -320,7 +365,8 @@ func (h *AuthHandler) registerEmployeeRoutes(r *mux.Router) {
 	protected.HandleFunc("/{id}", employeeHandler.DeleteEmployee).Methods("DELETE")
 }
 
-// registerAnalyticsRoutes registers analytics routes with authentication middleware
+// registerAnalyticsRoutes registers analytics routes with authentication and HR middleware.
+// All analytics endpoints require a valid JWT token and HR/Admin role.
 func (h *AuthHandler) registerAnalyticsRoutes(r *mux.Router) {
 	analyticsHandler := NewAnalyticsHandler()
 
@@ -334,11 +380,16 @@ func (h *AuthHandler) registerAnalyticsRoutes(r *mux.Router) {
 	protected.HandleFunc("/salary/department-insights", analyticsHandler.GetDepartmentInsights).Methods("GET")
 }
 
-// Helper functions
+// ==================== Utility Functions ====================
+
+// parseInt parses a string to an integer.
+// Returns the parsed integer or an error if parsing fails.
 func parseInt(s string) (int, error) {
 	return strconv.Atoi(s)
 }
 
+// parseUint parses a string to an unsigned integer.
+// Returns the parsed uint or an error if parsing fails.
 func parseUint(s string) (uint, error) {
 	val, err := strconv.ParseUint(s, 10, 32)
 	return uint(val), err

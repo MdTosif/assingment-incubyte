@@ -1,3 +1,4 @@
+// Package models defines the data structures for the salary management system.
 package models
 
 import (
@@ -6,6 +7,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// ==================== Model Definition ====================
+
+// User represents an authenticated user (HR or Admin) in the system.
+// It stores credentials, role information, and account status.
 type User struct {
 	ID        uint       `json:"id" gorm:"primaryKey"`
 	Email     string     `json:"email" gorm:"uniqueIndex;not null"`
@@ -19,17 +24,22 @@ type User struct {
 	UpdatedAt time.Time  `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
+// ==================== Request Types ====================
+
+// LoginRequest represents user login credentials.
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
+// LoginResponse represents the successful authentication response.
 type LoginResponse struct {
 	Token     string    `json:"token"`
 	ExpiresAt time.Time `json:"expiresAt"`
 	User      User      `json:"user"`
 }
 
+// CreateHRUserRequest represents data needed to create a new HR/Admin user.
 type CreateHRUserRequest struct {
 	Email     string `json:"email" binding:"required,email"`
 	Password  string `json:"password" binding:"required,min=8"`
@@ -38,6 +48,8 @@ type CreateHRUserRequest struct {
 	Role      string `json:"role" binding:"required,oneof=hr admin"`
 }
 
+// UpdateUserRequest represents data for updating an existing user.
+// All fields are optional for partial updates.
 type UpdateUserRequest struct {
 	FirstName *string `json:"firstName,omitempty"`
 	LastName  *string `json:"lastName,omitempty"`
@@ -46,22 +58,25 @@ type UpdateUserRequest struct {
 	IsActive  *bool   `json:"isActive,omitempty"`
 }
 
-// IsHR checks if user has HR role or higher
+// ==================== Helper Methods ====================
+
+// IsHR checks if the user has HR or Admin role permissions.
 func (u *User) IsHR() bool {
 	return u.Role == "hr" || u.Role == "admin"
 }
 
-// IsAdmin checks if user has admin role
+// IsAdmin checks if the user has Admin role.
 func (u *User) IsAdmin() bool {
 	return u.Role == "admin"
 }
 
-// IsActiveUser checks if user account is active
+// IsActiveUser checks if the user account is active.
 func (u *User) IsActiveUser() bool {
 	return u.IsActive
 }
 
-// BeforeCreate GORM hook to set defaults
+// BeforeCreate is a GORM hook that sets default values for new users.
+// It sets the role to "hr" if empty and activates the account.
 func (u *User) BeforeCreate(tx *gorm.DB) error {
 	if u.Role == "" {
 		u.Role = "hr"
@@ -75,7 +90,8 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// ToSafeUser returns user without sensitive data
+// ToSafeUser returns a copy of the user with sensitive data (password) removed.
+// Use this when returning user data in API responses.
 func (u *User) ToSafeUser() User {
 	return User{
 		ID:        u.ID,

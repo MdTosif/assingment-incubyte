@@ -1,3 +1,13 @@
+/**
+ * API Service Module
+ * 
+ * Provides configured axios instances and API methods for:
+ * - Employee management (CRUD + search)
+ * - Analytics (salary statistics)
+ * - Authentication (login, logout, password management)
+ * - Health checks
+ */
+
 import axios, { AxiosResponse, AxiosInstance } from 'axios';
 import {
   Employee,
@@ -14,12 +24,24 @@ import {
   User
 } from '../types';
 
-// Get API base URL from env or fallback
+// ==================== Configuration ====================
+
+/**
+ * Get API base URL from environment variable or fallback to localhost.
+ * @returns The base API URL string
+ */
 export const getApiBaseUrl = (): string => {
   return import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 };
 
-// Create axios instance with auth headers
+// ==================== Axios Instance ====================
+
+/**
+ * Create a configured axios instance with authentication interceptors.
+ * - Request interceptor: Adds JWT token from localStorage to Authorization header
+ * - Response interceptor: Handles 401 errors by clearing auth and redirecting to login
+ * @returns Configured AxiosInstance
+ */
 export const createApiClient = (): AxiosInstance => {
   const client = axios.create({
     baseURL: getApiBaseUrl(),
@@ -56,11 +78,14 @@ export const createApiClient = (): AxiosInstance => {
   return client;
 };
 
-// Default api instance
+// Default API instance for internal use
 const api = createApiClient();
 
+// ==================== Employee API ====================
 
-// Employee API calls
+/**
+ * Employee API methods for CRUD operations and search.
+ */
 export const employeeAPI = {
   // Get all employees with pagination and optional search
   getEmployees: async (page = 1, limit = 10, search?: string): Promise<EmployeesResponse> => {
@@ -98,7 +123,11 @@ export const employeeAPI = {
   },
 };
 
-// Analytics API calls
+// ==================== Analytics API ====================
+
+/**
+ * Analytics API methods for salary statistics.
+ */
 export const analyticsAPI = {
   // Get salary statistics by country
   getSalaryByCountry: async (): Promise<CountrySalaryStats[]> => {
@@ -121,7 +150,11 @@ export const analyticsAPI = {
   },
 };
 
-// Authentication API calls
+// ==================== Authentication API ====================
+
+/**
+ * Authentication API methods for login, logout, and user management.
+ */
 export const authAPI = {
   // Login
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
@@ -146,7 +179,11 @@ export const authAPI = {
   },
 };
 
-// Health check
+// ==================== Health Check ====================
+
+/**
+ * Health check API for monitoring backend status.
+ */
 export const healthAPI = {
   getHealth: async (): Promise<HealthResponse> => {
     const response: AxiosResponse<HealthResponse> = await api.get('/api/health');

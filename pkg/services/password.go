@@ -1,3 +1,4 @@
+// Package services provides business logic for authentication and user management.
 package services
 
 import (
@@ -8,13 +9,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// ==================== Service Definition ====================
+
+// PasswordService handles password hashing, verification, and strength validation.
+// It uses bcrypt for secure password hashing.
 type PasswordService struct{}
 
+// ==================== Constructor ====================
+
+// NewPasswordService creates a new PasswordService.
 func NewPasswordService() *PasswordService {
 	return &PasswordService{}
 }
 
-// HashPassword hashes a password using bcrypt
+// ==================== Password Hashing ====================
+
+// HashPassword hashes a password using bcrypt with default cost.
 func (p *PasswordService) HashPassword(password string) (string, error) {
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -23,7 +33,9 @@ func (p *PasswordService) HashPassword(password string) (string, error) {
 	return string(hashedBytes), nil
 }
 
-// VerifyPassword verifies a password against its hash
+// ==================== Password Verification ====================
+
+// VerifyPassword checks if the provided password matches the stored hash.
 func (p *PasswordService) VerifyPassword(hashedPassword, password string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
@@ -32,7 +44,12 @@ func (p *PasswordService) VerifyPassword(hashedPassword, password string) error 
 	return nil
 }
 
-// ValidatePasswordStrength validates password strength requirements
+// ==================== Password Validation ====================
+
+// ValidatePasswordStrength checks if a password meets security requirements:
+// - At least 8 characters
+// - Contains uppercase, lowercase, number, and special character
+// - Not a common or weak password
 func (p *PasswordService) ValidatePasswordStrength(password string) error {
 	if len(password) < 8 {
 		return fmt.Errorf("password must be at least 8 characters long")
@@ -66,7 +83,7 @@ func (p *PasswordService) ValidatePasswordStrength(password string) error {
 	return nil
 }
 
-// isCommonPassword checks against a list of common passwords
+// isCommonPassword checks if the password is in a list of common weak passwords.
 func (p *PasswordService) isCommonPassword(password string) bool {
 	lowercasePassword := strings.ToLower(password)
 	commonPasswords := []string{
@@ -95,7 +112,7 @@ func (p *PasswordService) isCommonPassword(password string) bool {
 	return false
 }
 
-// isSequentialPattern checks for sequential keyboard patterns
+// isSequentialPattern checks for sequential keyboard patterns like "12345678" or "qwerty".
 func (p *PasswordService) isSequentialPattern(password string) bool {
 	sequentialPatterns := []string{
 		"12345678", "23456789", "34567890", "01234567",
@@ -111,7 +128,7 @@ func (p *PasswordService) isSequentialPattern(password string) bool {
 	return false
 }
 
-// isRepeatedPattern checks for repeated character patterns
+// isRepeatedPattern checks for repeated character patterns like "aaaaaa" or "111111".
 func (p *PasswordService) isRepeatedPattern(password string) bool {
 	// Check for patterns like "aaaaaa", "111111", etc.
 	// Using a simpler approach to avoid regex backreference issues
@@ -131,7 +148,8 @@ func (p *PasswordService) isRepeatedPattern(password string) bool {
 	return false
 }
 
-// GenerateSecurePassword generates a secure random password (for admin user creation)
+// GenerateSecurePassword generates a secure random password with required character types.
+// It ensures at least one lowercase, uppercase, number, and special character.
 func (p *PasswordService) GenerateSecurePassword(length int) string {
 	if length < 8 {
 		length = 12

@@ -28,6 +28,7 @@ interface Analytics {
 }
 
 const Dashboard: React.FC = () => {
+  // ==================== State ====================
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -44,7 +45,9 @@ const Dashboard: React.FC = () => {
   const [tableLoading, setTableLoading] = useState(false);
   const debouncedSearch = useDebounce(searchInput, 500);
 
-  // Fetch employees with server-side pagination
+  // ==================== Data Fetching ====================
+
+  /** Fetch employees with server-side pagination and optional search */
   const fetchEmployees = useCallback(async (page: number, limit: number, search?: string) => {
     console.log('[Dashboard] fetchEmployees called:', { page, limit, search });
     try {
@@ -117,6 +120,9 @@ const Dashboard: React.FC = () => {
     setCurrentPage(1);
   }, [debouncedSearch]);
 
+  // ==================== Handlers ====================
+
+  /** Handle user logout - calls API and clears local storage */
   const handleLogout = async () => {
     try {
       await authAPI.logout();
@@ -129,6 +135,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  /** Handle employee deletion with confirmation dialog */
   const handleDelete = useCallback(async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this employee?')) {
       return;
@@ -141,20 +148,25 @@ const Dashboard: React.FC = () => {
     }
   }, [currentPage, pageSize, debouncedSearch, fetchEmployees]);
 
+  /** Handle pagination page changes */
   const handlePageChange = useCallback((page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   }, [totalPages]);
 
+  /** Handle page size changes - resets to page 1 */
   const handlePageSizeChange = useCallback((value: number) => {
     setPageSize(value);
     setCurrentPage(1);
   }, []);
 
+  /** Handle search input changes */
   const handleSearchChange = useCallback((value: string) => {
     setSearchInput(value);
   }, []);
+
+  // ==================== Render ====================
 
   if (loading) {
     return (

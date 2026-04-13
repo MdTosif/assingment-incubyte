@@ -1,3 +1,5 @@
+// Package database provides database initialization and connection management.
+// It uses GORM with SQLite for data persistence and handles schema migrations.
 package database
 
 import (
@@ -11,8 +13,18 @@ import (
 	"gorm.io/gorm"
 )
 
+// ==================== Global Instance ====================
+
+// DB is the global database connection pool.
+// It is initialized by InitDB and should be closed with CloseDB on shutdown.
 var DB *gorm.DB
 
+// ==================== Initialization ====================
+
+// InitDB initializes the database connection and runs schema migrations.
+// It uses SQLite with the path from DATABASE_PATH env var or defaults.
+// For serverless environments (Vercel), it uses /tmp/salary_management.db.
+// It also creates a default admin user if no users exist.
 func InitDB() {
 	dbPath := os.Getenv("DATABASE_PATH")
 	if dbPath == "" {
@@ -41,6 +53,10 @@ func InitDB() {
 	log.Println("Successfully connected to database and migrated schema")
 }
 
+// ==================== Cleanup ====================
+
+// CloseDB closes the database connection.
+// It should be called on application shutdown to release resources.
 func CloseDB() {
 	sqlDB, err := DB.DB()
 	if err != nil {
@@ -53,6 +69,11 @@ func CloseDB() {
 	}
 }
 
+// ==================== Default Data ====================
+
+// createDefaultAdminUser creates a default admin user if no users exist in the database.
+// This ensures there is always an initial user to log in with.
+// Default credentials: admin@company.com / admin123
 func createDefaultAdminUser() {
 	var count int64
 	DB.Model(&models.User{}).Count(&count)

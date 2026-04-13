@@ -1,3 +1,6 @@
+// Package models defines the data structures for the salary management system.
+// It includes database models, request/response types, and helper methods
+// for employee and user management.
 package models
 
 import (
@@ -6,6 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// ==================== Model Definition ====================
+
+// Employee represents an employee in the system.
+// It stores personal information, job details, salary data, and employment dates.
 type Employee struct {
 	ID         uint      `json:"id" gorm:"primaryKey"`
 	FirstName  string    `json:"firstName" gorm:"not null"`
@@ -20,6 +27,10 @@ type Employee struct {
 	UpdatedAt  time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
+// ==================== Request Types ====================
+
+// CreateEmployeeRequest represents the data required to create a new employee.
+// All fields are required for employee creation.
 type CreateEmployeeRequest struct {
 	FirstName  string  `json:"firstName" binding:"required"`
 	LastName   string  `json:"lastName" binding:"required"`
@@ -30,6 +41,8 @@ type CreateEmployeeRequest struct {
 	Department string  `json:"department" binding:"required"`
 }
 
+// UpdateEmployeeRequest represents the data for updating an existing employee.
+// All fields are optional (pointers) to allow partial updates.
 type UpdateEmployeeRequest struct {
 	FirstName  *string  `json:"firstName,omitempty"`
 	LastName   *string  `json:"lastName,omitempty"`
@@ -40,6 +53,10 @@ type UpdateEmployeeRequest struct {
 	Department *string  `json:"department,omitempty"`
 }
 
+// ==================== Helper Methods ====================
+
+// BeforeCreate is a GORM hook that sets the hire date to the current time
+// if it hasn't been set already.
 func (e *Employee) BeforeCreate(tx *gorm.DB) error {
 	if e.HireDate.IsZero() {
 		e.HireDate = time.Now()
@@ -47,6 +64,8 @@ func (e *Employee) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// ToEmployee converts a CreateEmployeeRequest to an Employee model.
+// Returns nil if the request is nil.
 func ToEmployee(req *CreateEmployeeRequest) *Employee {
 	if req == nil {
 		return nil
@@ -63,6 +82,8 @@ func ToEmployee(req *CreateEmployeeRequest) *Employee {
 	}
 }
 
+// UpdateFromRequest updates the employee fields from an UpdateEmployeeRequest.
+// Only non-nil fields are updated, allowing for partial updates.
 func (e *Employee) UpdateFromRequest(req *UpdateEmployeeRequest) {
 	if req.FirstName != nil {
 		e.FirstName = *req.FirstName
