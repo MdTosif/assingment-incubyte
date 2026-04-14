@@ -69,7 +69,8 @@ run:
 # Build web and run server with public assets
 start: build-web
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/server
-	PUBLIC_DIR=./web/build ./$(BINARY_NAME)
+	cp -r web/build/* ./public/
+	PUBLIC_DIR=./public ./$(BINARY_NAME)
 
 # Development targets
 dev:

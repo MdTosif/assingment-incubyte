@@ -8,8 +8,8 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/tofiquem/assingment/pkg/database"
 	"github.com/tofiquem/assingment/pkg/models"
+	"github.com/tofiquem/assingment/pkg/services"
 	"gorm.io/gorm"
 )
 
@@ -18,15 +18,15 @@ import (
 // EmployeeHandler handles HTTP requests for employee management.
 // It provides endpoints for CRUD operations on employee records.
 type EmployeeHandler struct {
-	db *gorm.DB
+	employeeService *services.EmployeeService
 }
 
 // ==================== Constructor & Route Registration ====================
 
-// NewEmployeeHandler creates a new EmployeeHandler with the default database connection.
-func NewEmployeeHandler() *EmployeeHandler {
+// NewEmployeeHandler creates a new EmployeeHandler with the given database connection.
+func NewEmployeeHandler(db *gorm.DB) *EmployeeHandler {
 	return &EmployeeHandler{
-		db: database.DB,
+		employeeService: services.NewEmployeeService(db),
 	}
 }
 
@@ -62,38 +62,10 @@ func (h *EmployeeHandler) GetEmployees(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	offset := (page - 1) * limit
-
-	var employees []models.Employee
-	var total int64
-
-	query := h.db.Model(&models.Employee{})
-
-	// Apply search filter if provided
-	if search != "" {
-		searchPattern := "%" + search + "%"
-		query = query.Where(
-			"first_name ILIKE ? OR last_name ILIKE ? OR email ILIKE ? OR job_title ILIKE ? OR country ILIKE ? OR department ILIKE ?",
-			searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern,
-		)
-	}
-
-	if err := query.Count(&total).Error; err != nil {
-		http.Error(w, "Failed to count employees", http.StatusInternalServerError)
+	response, err := h.employeeService.ListEmployees(page, limit, search)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-
-	if err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&employees).Error; err != nil {
-		http.Error(w, "Failed to fetch employees", http.StatusInternalServerError)
-		return
-	}
-
-	response := map[string]interface{}{
-		"employees": employees,
-		"total":     total,
-		"page":      page,
-		"limit":     limit,
-		"pages":     (total + int64(limit) - 1) / int64(limit),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -110,9 +82,9 @@ func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	employee := models.ToEmployee(&req)
-	if err := h.db.Create(employee).Error; err != nil {
-		http.Error(w, "Failed to create employee", http.StatusInternalServerError)
+	employee, err := h.employeeService.CreateEmployee(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -133,12 +105,12 @@ func (h *EmployeeHandler) GetEmployee(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var employee models.Employee
-	if err := h.db.First(&employee, uint(id)).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+	employee, err := h.employeeService.GetEmployeeByID(uint(id))
+	if err != nil {
+		if err.Error() == "employee not found" {
 			http.Error(w, "Employee not found", http.StatusNotFound)
 		} else {
-			http.Error(w, "Failed to fetch employee", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
@@ -166,19 +138,13 @@ func (h *EmployeeHandler) UpdateEmployee(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var employee models.Employee
-	if err := h.db.First(&employee, uint(id)).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+	employee, err := h.employeeService.UpdateEmployee(uint(id), &req)
+	if err != nil {
+		if err.Error() == "employee not found" {
 			http.Error(w, "Employee not found", http.StatusNotFound)
 		} else {
-			http.Error(w, "Failed to fetch employee", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		return
-	}
-
-	employee.UpdateFromRequest(&req)
-	if err := h.db.Save(&employee).Error; err != nil {
-		http.Error(w, "Failed to update employee", http.StatusInternalServerError)
 		return
 	}
 
@@ -198,18 +164,13 @@ func (h *EmployeeHandler) DeleteEmployee(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var employee models.Employee
-	if err := h.db.First(&employee, uint(id)).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+	err = h.employeeService.DeleteEmployee(uint(id))
+	if err != nil {
+		if err.Error() == "employee not found" {
 			http.Error(w, "Employee not found", http.StatusNotFound)
 		} else {
-			http.Error(w, "Failed to fetch employee", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		return
-	}
-
-	if err := h.db.Delete(&employee).Error; err != nil {
-		http.Error(w, "Failed to delete employee", http.StatusInternalServerError)
 		return
 	}
 

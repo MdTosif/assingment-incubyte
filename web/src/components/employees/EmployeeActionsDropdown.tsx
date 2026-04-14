@@ -36,9 +36,9 @@ const EmployeeActionsDropdown: React.FC<EmployeeActionsDropdownProps> = ({
 
   // ==================== Handlers ====================
 
-  /** Navigate to employee detail/edit page */
+  /** Navigate to employee detail view page */
   const handleView = () => {
-    navigate(`/edit-employee/${employeeId}`);
+    navigate(`/employee/${employeeId}`);
   };
 
   /** Navigate to employee edit page */

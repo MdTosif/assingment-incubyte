@@ -13,6 +13,8 @@ import { User } from './types';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import EmployeeForm from './components/EmployeeForm';
+import Analytics from './components/Analytics';
+import { EmployeeView } from './components/employees';
 import './App.css';
 
 function App() {
@@ -92,9 +94,10 @@ function App() {
         {user ? (
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/analytics" element={<Dashboard />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/add-employee" element={<EmployeeForm />} />
             <Route path="/edit-employee/:id" element={<EmployeeForm />} />
+            <Route path="/employee/:id" element={<EmployeeView />} />
             <Route path="/login" element={<Navigate to="/" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

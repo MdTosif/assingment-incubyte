@@ -351,7 +351,7 @@ func (h *AuthHandler) adminMiddleware(next http.Handler) http.Handler {
 // registerEmployeeRoutes registers employee routes with authentication and HR middleware.
 // All employee endpoints require a valid JWT token and HR/Admin role.
 func (h *AuthHandler) registerEmployeeRoutes(r *mux.Router) {
-	employeeHandler := NewEmployeeHandler()
+	employeeHandler := NewEmployeeHandler(h.authService.DB())
 
 	// All employee routes require authentication and HR role
 	protected := r.PathPrefix("/api/employees").Subrouter()
@@ -368,7 +368,7 @@ func (h *AuthHandler) registerEmployeeRoutes(r *mux.Router) {
 // registerAnalyticsRoutes registers analytics routes with authentication and HR middleware.
 // All analytics endpoints require a valid JWT token and HR/Admin role.
 func (h *AuthHandler) registerAnalyticsRoutes(r *mux.Router) {
-	analyticsHandler := NewAnalyticsHandler()
+	analyticsHandler := NewAnalyticsHandler(h.authService.DB())
 
 	// All analytics routes require authentication and HR role
 	protected := r.PathPrefix("/api/analytics").Subrouter()

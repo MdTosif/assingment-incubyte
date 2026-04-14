@@ -50,11 +50,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	authHandler.RegisterRoutes(router)
 
 	// Analytics handlers
-	analyticsHandler := handlers.NewAnalyticsHandler()
+	analyticsHandler := handlers.NewAnalyticsHandler(database.DB)
 	analyticsHandler.RegisterRoutes(router)
 
 	// Employee handlers
-	employeeHandler := handlers.NewEmployeeHandler()
+	employeeHandler := handlers.NewEmployeeHandler(database.DB)
 	employeeHandler.RegisterRoutes(router)
 
 	// Configure CORS

@@ -14,6 +14,7 @@ import (
 	"github.com/tofiquem/assingment/pkg/handlers"
 	"github.com/tofiquem/assingment/pkg/models"
 	"github.com/tofiquem/assingment/pkg/testutils"
+	"gorm.io/gorm"
 )
 
 func TestMain_Setup(t *testing.T) {
@@ -92,7 +93,7 @@ func TestMain_Setup(t *testing.T) {
 		defer func() { database.DB = originalDB }()
 
 		// Create router with employee routes
-		router := setupTestRouter()
+		router := setupTestRouter(testDB)
 
 		// Test CREATE employee
 		createReq := models.CreateEmployeeRequest{
@@ -246,7 +247,7 @@ func TestMain_Setup(t *testing.T) {
 		testutils.CreateTestEmployees(testDB)
 
 		// Create router with analytics routes
-		router := setupTestRouter()
+		router := setupTestRouter(testDB)
 
 		// Test salary by country
 		req, err := http.NewRequest("GET", "/api/analytics/salary/by-country", nil)
@@ -321,7 +322,7 @@ func TestMain_Setup(t *testing.T) {
 		database.DB = testDB
 		defer func() { database.DB = originalDB }()
 
-		router := setupTestRouter()
+		router := setupTestRouter(testDB)
 
 		// Test invalid JSON
 		req, err := http.NewRequest("POST", "/api/employees", bytes.NewBufferString("invalid json"))
@@ -515,7 +516,7 @@ func TestEnvironmentVariables(t *testing.T) {
 	defer func() { database.DB = originalDB }()
 
 	// This should use default values
-	router := setupTestRouter()
+	router := setupTestRouter(testDB)
 
 	req, err := http.NewRequest("GET", "/api/health", nil)
 	if err != nil {
@@ -548,7 +549,7 @@ func TestEnvironmentVariables(t *testing.T) {
 }
 
 // Helper function to set up test router
-func setupTestRouter() *mux.Router {
+func setupTestRouter(db *gorm.DB) *mux.Router {
 	router := mux.NewRouter()
 
 	// Health check endpoint
@@ -558,11 +559,11 @@ func setupTestRouter() *mux.Router {
 	}).Methods("GET")
 
 	// Employee handlers
-	employeeHandler := handlers.NewEmployeeHandler()
+	employeeHandler := handlers.NewEmployeeHandler(db)
 	employeeHandler.RegisterRoutes(router)
 
 	// Analytics handlers
-	analyticsHandler := handlers.NewAnalyticsHandler()
+	analyticsHandler := handlers.NewAnalyticsHandler(db)
 	analyticsHandler.RegisterRoutes(router)
 
 	return router

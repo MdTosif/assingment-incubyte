@@ -32,6 +32,11 @@ func NewAuthService(db *gorm.DB) *AuthService {
 	}
 }
 
+// DB returns the database connection used by the service.
+func (a *AuthService) DB() *gorm.DB {
+	return a.db
+}
+
 // ==================== Authentication ====================
 
 // Login authenticates a user with email and password.

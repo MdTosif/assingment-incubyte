@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Building2,
   Users,
@@ -8,7 +8,8 @@ import {
   LogOut,
   Menu,
   Plus,
-  Loader2
+  Loader2,
+  BarChart3
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -16,7 +17,7 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { employeeAPI, analyticsAPI, authAPI } from '../services/api';
-import { Employee, DepartmentSalaryStats, User, EmployeesResponse } from '../types';
+import { Employee, DepartmentSalaryStats, CountrySalaryStats, User, EmployeesResponse } from '../types';
 import { useDebounce } from '../hooks/useDebounce';
 import { EmployeeSearchFilter, EmployeeTable, EmployeePagination } from './employees';
 
@@ -25,6 +26,7 @@ interface Analytics {
   avgSalary: number;
   totalSalaryExpense: number;
   departments: DepartmentSalaryStats[];
+  countryStats: CountrySalaryStats[];
 }
 
 const Dashboard: React.FC = () => {
@@ -88,14 +90,15 @@ const Dashboard: React.FC = () => {
         // Calculate analytics from API responses
         const totalEmployees = employeesData.total || 0;
         const avgSalary = salaryData.length > 0 ?
-          salaryData.reduce((sum: number, country: any) => sum + country.average, 0) / salaryData.length : 0;
+          salaryData.reduce((sum: number, country: CountrySalaryStats) => sum + country.average, 0) / salaryData.length : 0;
         const totalSalaryExpense = employeesData.employees?.reduce((sum: number, emp: Employee) => sum + emp.salary, 0) || 0;
 
         setAnalytics({
           totalEmployees,
           avgSalary,
           totalSalaryExpense,
-          departments: departmentData || []
+          departments: departmentData || [],
+          countryStats: salaryData || []
         });
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -206,6 +209,12 @@ const Dashboard: React.FC = () => {
                     <p className="text-sm text-muted-foreground">{user?.email}</p>
                   </div>
                 </div>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link to="/analytics">
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Analytics
+                  </Link>
+                </Button>
                 <Button onClick={handleLogout} variant="outline" className="w-full">
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
@@ -216,6 +225,12 @@ const Dashboard: React.FC = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-4">
+            <Button variant="ghost" asChild>
+              <Link to="/analytics">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Analytics
+              </Link>
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -292,6 +307,55 @@ const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Quick Salary Insights Preview */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                <CardTitle>Quick Insights</CardTitle>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/analytics">
+                  View Full Analytics
+                  <TrendingUp className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            <CardDescription>
+              Top countries by average salary
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">Country</th>
+                    <th className="px-4 py-3 text-right font-medium">Employees</th>
+                    <th className="px-4 py-3 text-right font-medium">Min</th>
+                    <th className="px-4 py-3 text-right font-medium">Max</th>
+                    <th className="px-4 py-3 text-right font-medium">Average</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics?.countryStats?.slice(0, 5).map((stat) => (
+                    <tr key={stat.country} className="border-t">
+                      <td className="px-4 py-3 font-medium">{stat.country}</td>
+                      <td className="px-4 py-3 text-right">{stat.count}</td>
+                      <td className="px-4 py-3 text-right">${stat.min.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right">${stat.max.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-primary">
+                        ${stat.average.toFixed(0)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Employee Table */}
         <Card>
