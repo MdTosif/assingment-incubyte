@@ -148,6 +148,14 @@ export const analyticsAPI = {
     const response: AxiosResponse<DepartmentSalaryStats[]> = await api.get('/analytics/salary/department-insights');
     return response.data;
   },
+
+  // Get department salary insights by country
+  getDepartmentInsightsByCountry: async (country: string): Promise<DepartmentSalaryStats[]> => {
+    const response: AxiosResponse<DepartmentSalaryStats[]> = await api.get(
+      `/analytics/salary/department-insights/${encodeURIComponent(country)}`
+    );
+    return response.data;
+  },
 };
 
 // ==================== Authentication API ====================
