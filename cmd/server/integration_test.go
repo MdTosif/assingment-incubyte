@@ -310,6 +310,48 @@ func TestMain_Setup(t *testing.T) {
 		if len(deptStats) == 0 {
 			t.Error("Expected at least one department in response")
 		}
+
+		// Test department insights by country
+		req, err = http.NewRequest("GET", "/api/analytics/salary/department-insights/USA", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr = httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("Expected status code %d, got %d", http.StatusOK, rr.Code)
+		}
+
+		var deptStatsByCountry []map[string]interface{}
+		if err := json.Unmarshal(rr.Body.Bytes(), &deptStatsByCountry); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		// Verify response structure
+		if len(deptStatsByCountry) == 0 {
+			t.Error("Expected at least one department for USA in response")
+		}
+
+		// Check that response contains expected fields
+		for _, stat := range deptStatsByCountry {
+			if _, ok := stat["department"]; !ok {
+				t.Error("Expected department field in response")
+			}
+			if _, ok := stat["count"]; !ok {
+				t.Error("Expected count field in response")
+			}
+			if _, ok := stat["average"]; !ok {
+				t.Error("Expected average field in response")
+			}
+			if _, ok := stat["min"]; !ok {
+				t.Error("Expected min field in response")
+			}
+			if _, ok := stat["max"]; !ok {
+				t.Error("Expected max field in response")
+			}
+		}
 	})
 
 	t.Run("error_handling", func(t *testing.T) {

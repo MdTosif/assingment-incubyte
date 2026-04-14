@@ -14,7 +14,6 @@ import {
   Loader2,
   Globe,
   PieChart,
-  Activity,
   ChevronDown,
 } from 'lucide-react';
 import { Button } from './ui/button';
@@ -45,7 +44,6 @@ const Analytics: React.FC = () => {
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [jobTitleStats, setJobTitleStats] = useState<JobTitleSalaryStats[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
 
   // Department by country state
   const [deptCountry, setDeptCountry] = useState<string>('');
@@ -89,10 +87,6 @@ const Analytics: React.FC = () => {
           setDeptCountry(salaryData[0].country);
         }
 
-        // Set first department as selected if available
-        if (departmentData && departmentData.length > 0) {
-          setSelectedDepartment(departmentData[0].department);
-        }
       } catch (error) {
         console.error('Failed to load analytics:', error);
       } finally {
@@ -129,12 +123,6 @@ const Analytics: React.FC = () => {
         setDeptLoading(true);
         const stats = await analyticsAPI.getDepartmentInsightsByCountry(deptCountry);
         setDeptStatsByCountry(stats);
-        // Reset selected department when country changes
-        if (stats && stats.length > 0) {
-          setSelectedDepartment(stats[0].department);
-        } else {
-          setSelectedDepartment('');
-        }
       } catch (error) {
         console.error('Failed to fetch department stats by country:', error);
       } finally {
@@ -477,53 +465,27 @@ const Analytics: React.FC = () => {
                       Salary statistics filtered by country
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-4 flex-wrap">
-                    {/* Country Dropdown */}
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="w-[160px] justify-between bg-slate-900 border-slate-700">
-                            {deptCountry || 'Select country'}
-                            <ChevronDown className="h-4 w-4 ml-2 opacity-50" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-[160px] bg-slate-900 border-slate-700">
-                          {analytics?.countryStats?.map((stat) => (
-                            <DropdownMenuItem
-                              key={stat.country}
-                              onClick={() => setDeptCountry(stat.country)}
-                              className={`cursor-pointer ${deptCountry === stat.country ? 'bg-slate-800' : ''}`}
-                            >
-                              {stat.country}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    {/* Department Dropdown */}
-                    <div className="flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-muted-foreground" />
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="w-[200px] justify-between bg-slate-900 border-slate-700">
-                            {selectedDepartment || 'Select department'}
-                            <ChevronDown className="h-4 w-4 ml-2 opacity-50" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-[200px] bg-slate-900 border-slate-700">
-                          {deptStatsByCountry?.map((dept) => (
-                            <DropdownMenuItem
-                              key={dept.department}
-                              onClick={() => setSelectedDepartment(dept.department)}
-                              className={`cursor-pointer ${selectedDepartment === dept.department ? 'bg-slate-800' : ''}`}
-                            >
-                              {dept.department}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-[160px] justify-between bg-slate-900 border-slate-700">
+                          {deptCountry || 'Select country'}
+                          <ChevronDown className="h-4 w-4 ml-2 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-[160px] bg-slate-900 border-slate-700">
+                        {analytics?.countryStats?.map((stat) => (
+                          <DropdownMenuItem
+                            key={stat.country}
+                            onClick={() => setDeptCountry(stat.country)}
+                            className={`cursor-pointer ${deptCountry === stat.country ? 'bg-slate-800' : ''}`}
+                          >
+                            {stat.country}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </CardHeader>
@@ -548,10 +510,7 @@ const Analytics: React.FC = () => {
                         </thead>
                         <tbody>
                           {deptStatsByCountry.map((dept) => (
-                            <tr
-                              key={dept.department}
-                              className={`border-t ${selectedDepartment === dept.department ? 'bg-primary/5' : ''}`}
-                            >
+                            <tr key={dept.department} className="border-t">
                               <td className="px-4 py-3 font-medium">{dept.department}</td>
                               <td className="px-4 py-3 text-right">{dept.count}</td>
                               <td className="px-4 py-3 text-right">{formatCurrency(dept.min)}</td>
@@ -567,46 +526,6 @@ const Analytics: React.FC = () => {
                         </tbody>
                       </table>
                     </div>
-
-                    {/* Department Summary Card */}
-                    {selectedDepartment && (
-                      <div className="mt-6 grid gap-4 md:grid-cols-4">
-                        {(() => {
-                          const dept = deptStatsByCountry.find(d => d.department === selectedDepartment);
-                          if (!dept) return null;
-                          return (
-                            <>
-                              <Card className="bg-primary/5">
-                                <CardContent className="pt-6">
-                                  <p className="text-sm text-muted-foreground">Employees</p>
-                                  <p className="text-2xl font-bold">{dept.count}</p>
-                                </CardContent>
-                              </Card>
-                              <Card className="bg-primary/5">
-                                <CardContent className="pt-6">
-                                  <p className="text-sm text-muted-foreground">Average Salary</p>
-                                  <p className="text-2xl font-bold">{formatCurrency(dept.average)}</p>
-                                </CardContent>
-                              </Card>
-                              <Card className="bg-primary/5">
-                                <CardContent className="pt-6">
-                                  <p className="text-sm text-muted-foreground">Salary Range</p>
-                                  <p className="text-lg font-bold">
-                                    {formatCurrency(dept.min)} - {formatCurrency(dept.max)}
-                                  </p>
-                                </CardContent>
-                              </Card>
-                              <Card className="bg-primary/5">
-                                <CardContent className="pt-6">
-                                  <p className="text-sm text-muted-foreground">Total Cost</p>
-                                  <p className="text-2xl font-bold">{formatCurrency(dept.average * dept.count)}</p>
-                                </CardContent>
-                              </Card>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    )}
                   </>
                 ) : deptCountry ? (
                   <div className="text-center py-12 text-muted-foreground">

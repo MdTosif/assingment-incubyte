@@ -378,6 +378,7 @@ func (h *AuthHandler) registerAnalyticsRoutes(r *mux.Router) {
 	protected.HandleFunc("/salary/by-country", analyticsHandler.GetSalaryByCountry).Methods("GET")
 	protected.HandleFunc("/salary/by-job-title/{country}", analyticsHandler.GetSalaryByJobTitleInCountry).Methods("GET")
 	protected.HandleFunc("/salary/department-insights", analyticsHandler.GetDepartmentInsights).Methods("GET")
+	protected.HandleFunc("/salary/department-insights/{country}", analyticsHandler.GetDepartmentInsightsByCountry).Methods("GET")
 }
 
 // ==================== Utility Functions ====================

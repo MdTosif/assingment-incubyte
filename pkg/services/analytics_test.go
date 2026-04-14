@@ -358,6 +358,129 @@ func TestAnalyticsService_GetDepartmentInsights_EmptyDatabase(t *testing.T) {
 	}
 }
 
+func TestAnalyticsService_GetDepartmentInsightsByCountry(t *testing.T) {
+	// Setup test database
+	originalDB := database.DB
+	defer func() {
+		database.DB = originalDB
+	}()
+
+	testDB := testutils.TestDB(t)
+	defer testutils.CleanupTestDB(testDB)
+	database.DB = testDB
+
+	service := NewAnalyticsService(testDB)
+
+	// Create test employees with different countries and departments
+	employees := []models.Employee{
+		{FirstName: "John", LastName: "Doe", Email: "john@example.com", JobTitle: "Developer", Country: "USA", Salary: 75000.0, Department: "Engineering"},
+		{FirstName: "Jane", LastName: "Smith", Email: "jane@example.com", JobTitle: "Manager", Country: "USA", Salary: 85000.0, Department: "Management"},
+		{FirstName: "Bob", LastName: "Johnson", Email: "bob@example.com", JobTitle: "Developer", Country: "USA", Salary: 80000.0, Department: "Engineering"},
+		{FirstName: "Alice", LastName: "Williams", Email: "alice@example.com", JobTitle: "Developer", Country: "UK", Salary: 70000.0, Department: "Engineering"},
+		{FirstName: "Charlie", LastName: "Brown", Email: "charlie@example.com", JobTitle: "Designer", Country: "USA", Salary: 65000.0, Department: "Design"},
+	}
+
+	for _, emp := range employees {
+		if err := testDB.Create(&emp).Error; err != nil {
+			t.Fatalf("Failed to create test employee: %v", err)
+		}
+	}
+
+	// Get department insights for USA
+	stats, err := service.GetDepartmentInsightsByCountry("USA")
+	if err != nil {
+		t.Fatalf("Failed to get department insights by country: %v", err)
+	}
+
+	if len(stats) != 3 {
+		t.Errorf("Expected 3 departments in USA, got %d", len(stats))
+	}
+
+	// Find Engineering stats for USA
+	engFound := false
+	for _, stat := range stats {
+		if stat.Department == "Engineering" {
+			engFound = true
+			if stat.Count != 2 {
+				t.Errorf("Expected Engineering count 2 in USA, got %d", stat.Count)
+			}
+			if stat.Min != 75000.0 {
+				t.Errorf("Expected Engineering min 75000.0 in USA, got %f", stat.Min)
+			}
+			if stat.Max != 80000.0 {
+				t.Errorf("Expected Engineering max 80000.0 in USA, got %f", stat.Max)
+			}
+		}
+	}
+	if !engFound {
+		t.Error("Expected Engineering to be in USA stats")
+	}
+
+	// Verify results are ordered by average descending
+	if len(stats) >= 2 && stats[0].Average < stats[1].Average {
+		t.Error("Expected results to be ordered by average salary descending")
+	}
+}
+
+func TestAnalyticsService_GetDepartmentInsightsByCountry_EmptyCountry(t *testing.T) {
+	// Setup test database
+	originalDB := database.DB
+	defer func() {
+		database.DB = originalDB
+	}()
+
+	testDB := testutils.TestDB(t)
+	defer testutils.CleanupTestDB(testDB)
+	database.DB = testDB
+
+	service := NewAnalyticsService(testDB)
+
+	// Try to get stats with empty country
+	_, err := service.GetDepartmentInsightsByCountry("")
+	if err == nil {
+		t.Error("Expected error for empty country parameter")
+	}
+
+	if err.Error() != "country parameter is required" {
+		t.Errorf("Expected 'country parameter is required' error, got: %v", err)
+	}
+}
+
+func TestAnalyticsService_GetDepartmentInsightsByCountry_NonExistentCountry(t *testing.T) {
+	// Setup test database
+	originalDB := database.DB
+	defer func() {
+		database.DB = originalDB
+	}()
+
+	testDB := testutils.TestDB(t)
+	defer testutils.CleanupTestDB(testDB)
+	database.DB = testDB
+
+	service := NewAnalyticsService(testDB)
+
+	// Create test employees
+	employees := []models.Employee{
+		{FirstName: "John", LastName: "Doe", Email: "john@example.com", JobTitle: "Developer", Country: "USA", Salary: 75000.0, Department: "Engineering"},
+	}
+
+	for _, emp := range employees {
+		if err := testDB.Create(&emp).Error; err != nil {
+			t.Fatalf("Failed to create test employee: %v", err)
+		}
+	}
+
+	// Get stats for non-existent country
+	stats, err := service.GetDepartmentInsightsByCountry("NonExistent")
+	if err != nil {
+		t.Fatalf("Failed to get department insights: %v", err)
+	}
+
+	if len(stats) != 0 {
+		t.Errorf("Expected 0 departments for non-existent country, got %d", len(stats))
+	}
+}
+
 func TestAnalyticsService_GetSalaryByCountry_OrderedByAverageDesc(t *testing.T) {
 	// Setup test database
 	originalDB := database.DB
