@@ -2,249 +2,426 @@
 
 A professional salary management system for HR Managers to manage employee data and gain salary insights. Features secure JWT authentication, role-based access control, and a modern responsive UI built with shadcn/ui.
 
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Architecture](#architecture)
+3. [Tech Stack](#tech-stack)
+4. [Project Structure](#project-structure)
+5. [Setup & Installation](#setup--installation)
+6. [Usage](#usage)
+7. [API Documentation](#api-documentation)
+8. [Authentication Flow](#authentication-flow)
+9. [Testing](#testing)
+10. [Deployment](#deployment)
+11. [Environment Variables](#environment-variables)
+12. [Troubleshooting](#troubleshooting)
+
+---
+
 ## Overview
 
-This application consists of:
-- **Backend**: Go REST API with JWT authentication and SQLite database
-- **Frontend**: React application with shadcn/ui components and Tailwind CSS
-- **Database**: SQLite with GORM ORM
-- **Authentication**: JWT-based authentication with role-based access control
-- **UI**: Modern, responsive design with dark theme support
+The Salary Management Tool is a full-stack web application designed for HR departments to efficiently manage employee records and analyze salary data across different dimensions.
 
-## Key Features
+### Key Features
 
-### Authentication & Security
-- **JWT-based authentication** with secure token management
-- **Role-based access control** (HR/Admin roles)
-- **Password security** with bcrypt hashing and strength validation
-- **Protected API endpoints** for all sensitive operations
+| Feature | Description |
+|---------|-------------|
+| **Authentication** | JWT-based authentication with role-based access control (HR/Admin roles) |
+| **Employee Management** | Complete CRUD operations with pagination, search, and filtering |
+| **Analytics Dashboard** | Salary statistics by country, job title, and department |
+| **Modern UI** | Responsive design using shadcn/ui components with Tailwind CSS |
+| **Security** | Password hashing with bcrypt, protected endpoints, input validation |
 
-### Modern UI/UX
-- **Professional design** with shadcn/ui components
-- **Responsive layout** optimized for all screen sizes
-- **Dark theme support** with CSS variables
-- **Mobile-friendly navigation** with hamburger menu
-- **Interactive components** with hover states and transitions
+---
 
-### Employee Management
-- **Complete CRUD operations** for employee records
-- **Advanced search** and filtering capabilities
-- **Pagination** for large datasets
-- **Form validation** with user-friendly error messages
+## Architecture
 
-### Analytics & Insights
-- **Salary statistics** by country and department
-- **Job title analysis** with drill-down capabilities
-- **Interactive dashboards** with visual indicators
-- **Comprehensive metrics** and KPIs
+### System Architecture
 
-## Prerequisites
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Client (Browser)                          │
+│                   React + TypeScript + Vite                    │
+│                     Tailwind CSS + shadcn/ui                   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              │ HTTP/REST
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      Go Backend Server                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │   Router    │  │  Middleware │  │    Route Handlers     │  │
+│  │  (gorilla)  │──│  (CORS,    │──│  - Auth Handler       │  │
+│  │             │  │  JWT Auth) │  │  - Employee Handler   │  │
+│  └─────────────┘  └─────────────┘  │  - Analytics Handler  │  │
+│                                    └─────────────────────────┘  │
+│                              │                                  │
+│                              ▼                                  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │   Models    │  │  Services   │  │   Static File Server    │  │
+│  │  (GORM)     │  │  (JWT,      │  │   (SPA Support)         │  │
+│  │  - User     │  │  Password)  │  │                         │  │
+│  │  - Employee │  │             │  │                         │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│                              │                                  │
+│                              ▼                                  │
+│                    ┌─────────────────┐                          │
+│                    │   SQLite DB     │                          │
+│                    │ (GORM ORM)      │                          │
+│                    └─────────────────┘                          │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-- Node.js (v18+) with npm
-- Go (v1.21+)
-- Git
+### Data Flow
 
-## Quick Start
+1. **Authentication Flow**
+   ```
+   Client → POST /api/auth/login → AuthService → JWT Token → localStorage
+   ```
 
-### 1. Backend Setup
+2. **Protected Request Flow**
+   ```
+   Client (with Bearer token) → authMiddleware → Handler → Service → Database
+        ↑                              │
+        └──────── 401/403 ────────────┘ (if invalid)
+   ```
 
+3. **Static Assets Flow**
+   ```
+   Client → GET / → spaHandler → index.html (React app)
+   Client → GET /api/* → API Router → JSON Response
+   ```
+
+---
+
+## Tech Stack
+
+### Backend
+| Component | Technology |
+|-----------|------------|
+| Language | Go 1.25 |
+| Framework | Gorilla Mux |
+| ORM | GORM |
+| Database | SQLite |
+| Authentication | JWT (golang-jwt) |
+| Password Hashing | bcrypt (golang.org/x/crypto) |
+| CORS | rs/cors |
+
+### Frontend
+| Component | Technology |
+|-----------|------------|
+| Framework | React 18 |
+| Language | TypeScript |
+| Build Tool | Vite 6 |
+| Styling | Tailwind CSS 4 |
+| UI Components | shadcn/ui + Radix UI |
+| Routing | React Router 7 |
+| Form Handling | React Hook Form + Zod |
+| HTTP Client | Axios |
+| Icons | Lucide React + Heroicons |
+
+---
+
+## Project Structure
+
+```
+/Users/tofiquem/tosif-practice/assingment/
+│
+├── cmd/                          # Application entry points
+│   ├── server/
+│   │   └── main.go              # HTTP server initialization
+│   └── seed/
+│       └── main.go              # Database seeding script
+│
+├── pkg/                         # Application packages
+│   ├── database/
+│   │   └── database.go          # SQLite connection & GORM setup
+│   ├── handlers/
+│   │   ├── auth.go             # Authentication & user management
+│   │   ├── employee.go         # Employee CRUD handlers
+│   │   └── analytics.go        # Salary analytics handlers
+│   ├── models/
+│   │   ├── user.go             # User model & auth types
+│   │   └── employee.go         # Employee model & request types
+│   ├── services/
+│   │   ├── auth_service.go     # Business logic for auth
+│   │   ├── jwt_service.go      # JWT token generation/validation
+│   │   └── password_service.go # Password hashing & validation
+│   └── testutils/
+│       └── testutils.go        # Test helpers & fixtures
+│
+├── api/
+│   └── index.go                # Vercel serverless function entry
+│
+├── web/                        # React frontend application
+│   ├── src/
+│   │   ├── components/         # React components
+│   │   │   ├── ui/            # shadcn/ui components
+│   │   │   ├── Login.tsx      # Authentication component
+│   │   │   ├── Dashboard.tsx  # Main dashboard
+│   │   │   ├── EmployeeForm.tsx
+│   │   │   ├── Analytics.tsx
+│   │   │   └── employees/     # Employee view components
+│   │   ├── services/
+│   │   │   └── api.ts         # API client with JWT interceptors
+│   │   ├── types/
+│   │   │   └── index.ts       # TypeScript type definitions
+│   │   ├── hooks/
+│   │   │   └── useAuth.ts     # Authentication hook
+│   │   ├── lib/
+│   │   │   └── utils.ts       # Utility functions
+│   │   ├── App.tsx            # Root application component
+│   │   └── main.tsx           # Application entry point
+│   ├── public/                # Static assets
+│   ├── package.json           # Frontend dependencies
+│   ├── tsconfig.json          # TypeScript configuration
+│   └── vite.config.ts         # Vite configuration
+│
+├── seed/                       # Seed data files
+├── public/                     # Production static files
+├── go.mod                      # Go module definition
+├── go.sum                      # Go dependency checksums
+├── Makefile                    # Build & test automation
+├── Dockerfile                  # Container configuration
+├── entrypoint.sh              # Docker entrypoint script
+├── vercel.json                # Vercel deployment config
+├── requirements.md            # Project requirements
+└── README.md                  # This file
+```
+
+---
+
+## Setup & Installation
+
+### Prerequisites
+
+- **Go** (v1.25+)
+- **Node.js** (v18+) with npm
+- **Git**
+- **Make** (optional, for Makefile commands)
+
+### Quick Start
+
+#### Option 1: Run Backend and Frontend Separately
+
+**Terminal 1 - Backend:**
 ```bash
-# Navigate to project root
 cd /Users/tofiquem/tosif-practice/assingment
 
 # Install Go dependencies
 go mod tidy
 
-# Run the backend server
+# Run the server
 go run cmd/server/main.go
 ```
+Backend runs on `http://localhost:8080`
 
-The backend will start on `http://localhost:8080`
-
-### 2. Frontend Setup
-
-```bash
-# Navigate to web directory
-cd web
-
-# Load Node.js (using nvm) and install dependencies
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm use node
-npm install
-
-# Run the frontend development server
-npm run dev
-```
-
-The frontend will start on `http://localhost:5173`
-
-### 3. Running Both Processes Simultaneously
-
-To run both backend and frontend at the same time, open two separate terminal windows:
-
-**Terminal 1 (Backend):**
-```bash
-cd /Users/tofiquem/tosif-practice/assingment
-go run cmd/server/main.go
-```
-
-**Terminal 2 (Frontend):**
+**Terminal 2 - Frontend:**
 ```bash
 cd /Users/tofiquem/tosif-practice/assingment/web
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm use node
+
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
 ```
+Frontend runs on `http://localhost:5173`
 
-## Development Workflow
-
-### Backend Development
+#### Option 2: Using Make Commands
 
 ```bash
+# Run backend only
+make run
+
+# Build and run everything (frontend + backend)
+make start
+
 # Run tests
 make test
 
-# Run specific test packages
-make test-unit      # Unit tests only
-make test-integration # Integration tests only
-
-# Run with coverage
-make test-coverage
-
-# Build the application
-make build
-
-# Run the application
-make run
-```
-
-### Frontend Development
-
-```bash
-cd web
-
-# Development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
+# Seed database with test data
+make seed
 ```
 
 ### Database Seeding
 
 ```bash
-# Seed the database with test data
+# Seed the database with sample employee data
 go run cmd/seed/main.go
 ```
 
-## API Endpoints
+---
 
-### Authentication
-- `POST /api/auth/login` - User login with email and password
-- `GET /api/auth/me` - Get current user information
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/change-password` - Change user password
+## Usage
 
-### Employee Management (Protected)
-- `GET /api/employees` - List all employees with pagination
-- `POST /api/employees` - Create new employee
-- `GET /api/employees/:id` - Get specific employee
-- `PUT /api/employees/:id` - Update employee
-- `DELETE /api/employees/:id` - Delete employee
+### Default Login Credentials
 
-### Salary Analytics (Protected)
-- `GET /api/analytics/salary/by-country` - Salary statistics by country
-- `GET /api/analytics/salary/by-job-title/:country` - Average salary by job title in country
-- `GET /api/analytics/salary/department-insights` - Department-wise salary analysis
+| Field | Value |
+|-------|-------|
+| Email | `admin@company.com` |
+| Password | `admin123` |
+| Role | Admin (HR Manager) |
+
+### Application Pages
+
+| Route | Description | Access |
+|-------|-------------|--------|
+| `/login` | Authentication page | Public |
+| `/` | Employee dashboard | Protected |
+| `/analytics` | Salary analytics | Protected |
+| `/add-employee` | Create new employee | Protected (HR/Admin) |
+| `/edit-employee/:id` | Edit employee | Protected (HR/Admin) |
+| `/employee/:id` | View employee details | Protected |
+
+### Role-Based Access
+
+- **HR Role**: Can manage employees and view analytics
+- **Admin Role**: Full access including user management
+
+---
+
+## API Documentation
+
+### Authentication Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/auth/login` | User login | No |
+| GET | `/api/auth/me` | Get current user | Yes |
+| POST | `/api/auth/logout` | Logout | Yes |
+| POST | `/api/auth/change-password` | Change password | Yes |
+
+### Employee Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/employees` | List all employees (paginated) | Yes (HR/Admin) |
+| POST | `/api/employees` | Create new employee | Yes (HR/Admin) |
+| GET | `/api/employees/:id` | Get specific employee | Yes (HR/Admin) |
+| PUT | `/api/employees/:id` | Update employee | Yes (HR/Admin) |
+| DELETE | `/api/employees/:id` | Delete employee | Yes (HR/Admin) |
+
+**Query Parameters for List:**
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20, max: 100)
+- `search` - Search by name/email
+- `country` - Filter by country
+- `department` - Filter by department
+
+### Analytics Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/analytics/salary/by-country` | Salary stats by country | Yes (HR/Admin) |
+| GET | `/api/analytics/salary/by-job-title/:country` | Salary by job title | Yes (HR/Admin) |
+| GET | `/api/analytics/salary/department-insights` | Department analysis | Yes (HR/Admin) |
+| GET | `/api/analytics/salary/department-insights/:country` | Dept analysis by country | Yes (HR/Admin) |
+
+### Admin Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/admin/users` | List all users | Yes (Admin only) |
+| POST | `/api/admin/users` | Create new user | Yes (Admin only) |
+| PUT | `/api/admin/users/:id` | Update user | Yes (Admin only) |
+| DELETE | `/api/admin/users/:id` | Delete user | Yes (Admin only) |
 
 ### Health Check
-- `GET /api/health` - Application health status
 
-> **Note**: All employee and analytics endpoints require JWT authentication in the `Authorization: Bearer <token>` header.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Application health status |
+
+---
+
+## Authentication Flow
+
+### JWT Token Flow
+
+```
+┌─────────┐                    ┌─────────────┐                    ┌──────────┐
+│  Client │────────────────────│   Server    │────────────────────│  Database│
+└────┬────┘  POST /api/auth/login└─────┬──────┘                    └──────────┘
+     │    {email, password}            │
+     │───────────────────────────────>│
+     │                                 │ Validate credentials
+     │                                 │──────> bcrypt compare
+     │                                 │<──────│
+     │                                 │ Generate JWT
+     │                                 │──────> Sign token
+     │                                 │<──────│
+     │  {token, expiresAt, user}     │
+     │<───────────────────────────────│
+     │                                 │
+     │ Store token in localStorage     │
+     │                                 │
+     │─────── Subsequent Requests ─────│
+     │                                 │
+     │ GET /api/employees              │
+     │ Authorization: Bearer <token>   │
+     │───────────────────────────────>│
+     │                                 │ Validate JWT
+     │                                 │──────> Parse & verify
+     │                                 │<──────│
+     │         {employees data}        │
+     │<───────────────────────────────│
+```
+
+### Middleware Chain
+
+```go
+// Route registration with middleware
+protected := r.PathPrefix("/api/employees").Subrouter()
+protected.Use(h.authMiddleware)    // Validates JWT token
+protected.Use(h.hrMiddleware)      // Checks HR/Admin role
+```
+
+---
 
 ## Testing
 
-### Run All Tests
+### Test Commands
+
 ```bash
+# Run all tests
 make test
-```
 
-### Test Coverage
-```bash
+# Run with coverage
 make test-coverage
-go tool cover -html=coverage.out
+
+# Run unit tests only
+make test-unit
+
+# Run integration tests only
+make test-integration
+
+# Run specific test
+make test-specific RUN=TestCreateEmployee
+
+# Run with race detection
+make test-verbose
+
+# Generate coverage HTML report
+make coverage-html
 ```
 
-### Run Specific Tests
-```bash
-# Model tests
-go test ./internal/models/...
+### Test Structure
 
-# Handler tests
-go test ./internal/handlers/...
+| Package | Test Files | Description |
+|---------|------------|-------------|
+| `pkg/models` | `*_test.go` | Model validation tests |
+| `pkg/handlers` | `*_test.go` | HTTP handler tests |
+| `cmd/server` | `main_test.go` | Integration tests |
 
-# Integration tests
-go test ./cmd/server/...
-```
+---
 
-## Project Structure
+## Deployment
 
-```
-assingment/
-|-- cmd/
-|   |-- server/           # Backend server entry point
-|   |-- seed/             # Database seeding script
-|-- internal/
-|   |-- database/         # Database connection and setup
-|   |-- handlers/         # HTTP handlers (including auth)
-|   |-- models/           # Data models (including User model)
-|   |-- services/         # Business logic (JWT, Password, Auth services)
-|   |-- testutils/        # Test utilities
-|-- web/                  # React frontend
-|   |-- src/
-|   |   |-- components/   # React components (including Navigation, Login)
-|   |   |   |-- ui/       # shadcn/ui components
-|   |   |-- lib/          # Utility functions
-|   |   |-- services/     # API service with JWT interceptors
-|   |   |-- types/        # TypeScript type definitions
-|   |-- public/           # Static assets
-|   |-- components.json   # shadcn/ui configuration
-|   |-- tailwind.config.js # Tailwind CSS configuration
-|-- Makefile              # Build and test automation
-|-- Dockerfile            # Container configuration
-|-- requirements.md       # Project requirements
-|-- SUMMARY.md            # Project summary
-|-- TESTING.md            # Testing documentation
-```
-
-## Environment Variables
-
-### Backend
-- `DATABASE_PATH`: Path to SQLite database (default: `./salary_management.db`)
-- `PORT`: Server port (default: `8080`)
-- `PUBLIC_DIR`: Static files directory (default: `public`)
-- `JWT_SECRET`: Secret key for JWT token signing (default: auto-generated warning)
-- `JWT_EXPIRATION`: JWT token expiration time (default: `24h`)
-
-### Frontend
-- `VITE_API_URL`: Backend API URL for production (default: `http://localhost:8080/api`)
-  
-**Development**: Uses Vite proxy (configured in vite.config.js) to avoid CORS issues
-**Production**: Uses `VITE_API_URL` environment variable
-
-To configure the frontend API connection for production:
-```bash
-cd web
-cp .env.example .env
-# Edit .env file if needed to change the backend URL
-```
-
-## Docker Support
+### Docker Deployment
 
 ```bash
 # Build Docker image
@@ -254,119 +431,102 @@ docker build -t salary-management .
 docker run -p 8080:8080 salary-management
 ```
 
-## Default Login Credentials
+### Vercel Deployment
 
-The application comes with a default admin user for testing:
+The application is configured for Vercel deployment with:
+- **Frontend**: Static build from `web/build`
+- **Backend API**: Serverless functions in `api/`
 
-- **Email**: `admin@company.com`
-- **Password**: `admin123`
-- **Role**: HR Manager
+See `vercel.json` for routing configuration.
 
-> **Note**: The default user is automatically created when the database is initialized. You can create additional users through the authentication system.
+### Production Build
 
-## Troubleshooting
-
-### Common Issues
-
-1. **Node.js not found**
-   ```bash
-   export NVM_DIR="$HOME/.nvm"
-   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-   nvm use node
-   ```
-
-2. **Port already in use**
-   ```bash
-   # Kill process on port 8080
-   lsof -ti:8080 | xargs kill -9
-   
-   # Kill process on port 5173
-   lsof -ti:5173 | xargs kill -9
-   ```
-
-3. **Database connection issues**
-   ```bash
-   # Remove existing database
-   rm salary_management.db
-   
-   # Restart backend to recreate database
-   go run cmd/server/main.go
-   ```
-
-4. **Authentication issues**
-   ```bash
-   # Check JWT_SECRET is set (recommended for production)
-   export JWT_SECRET="your-secret-key-here"
-   
-   # Clear browser localStorage if stuck
-   # Open browser dev tools -> Application -> Local Storage -> Clear
-   ```
-
-5. **Frontend build issues**
-   ```bash
-   cd web
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
-
-6. **JWT Token Expired**
-   - If you see authentication errors, simply logout and login again
-   - Tokens expire after 24 hours by default
-
-## Development Tips
-
-### Backend
-- Use `make test` for fast feedback during development
-- Check `TESTING.md` for comprehensive testing guidelines
-- Use `go run cmd/server/main.go` for hot reload during development
-- Authentication tests use in-memory SQLite databases
-- JWT secret can be set via `JWT_SECRET` environment variable
-
-### Frontend
-- The app uses Vite for fast development with hot reload
-- shadcn/ui components provide professional UI elements
-- Tailwind CSS is configured with dark theme support
-- React Router handles navigation and protected routes
-- TypeScript path aliases (`@/`) for cleaner imports
-- JWT tokens are automatically managed in localStorage
-
-### Testing
-- All tests should run in under 2 seconds
-- Use in-memory databases for test isolation
-- Authentication tests cover JWT, password, and auth services
-- Check test coverage before committing changes
-- Frontend components can be tested with React Testing Library
-
-### Authentication Development
-- Default admin user: `admin@company.com` / `admin123`
-- Tokens expire after 24 hours by default
-- Protected routes automatically redirect to login if not authenticated
-- API interceptors handle JWT token injection automatically
-
-## Production Deployment
-
-### Backend
 ```bash
-# Build production binary
+# Build backend
 make build
+
+# Build frontend
+cd web && npm run build
 
 # Run production binary
 ./salary-management
 ```
 
-### Frontend
+---
+
+## Environment Variables
+
+### Backend Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_PATH` | `./salary_management.db` | SQLite database file path |
+| `PORT` | `8080` | Server port |
+| `PUBLIC_DIR` | `public` | Static files directory |
+| `JWT_SECRET` | Auto-generated | JWT signing secret |
+| `JWT_EXPIRATION` | `24h` | JWT token lifetime |
+| `SEED_DATA_DIR` | `seed` | Seed data directory |
+
+### Frontend Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VITE_API_URL` | `/api` | Backend API URL (production) |
+
+**Development**: Uses Vite proxy to avoid CORS (configured in `vite.config.ts`)
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Node.js Not Found
 ```bash
-cd web
-npm run build
-# Deploy the build/ directory to your web server
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm use node
 ```
 
-## Contributing
+#### 2. Port Already in Use
+```bash
+# Kill process on port 8080
+lsof -ti:8080 | xargs kill -9
 
-1. Follow the existing code structure
-2. Write tests for new features
-3. Use the Makefile for common tasks
-4. Update documentation as needed
+# Kill process on port 5173
+lsof -ti:5173 | xargs kill -9
+```
+
+#### 3. Database Connection Issues
+```bash
+# Remove existing database
+rm salary_management.db
+
+# Restart backend to recreate
+go run cmd/server/main.go
+```
+
+#### 4. Authentication Issues
+```bash
+# Set JWT secret for production
+export JWT_SECRET="your-secret-key-here"
+
+# Clear browser localStorage
+# DevTools → Application → Local Storage → Clear
+```
+
+#### 5. Frontend Build Issues
+```bash
+cd web
+rm -rf node_modules package-lock.json
+npm install
+```
+
+#### 6. JWT Token Expired
+- Logout and login again
+- Default token lifetime: 24 hours
+
+---
 
 ## License
 
